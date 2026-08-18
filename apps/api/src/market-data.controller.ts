@@ -1,20 +1,23 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
-import { UnconfiguredMarketDataProvider } from './market-data.provider';
+import { TwelveDataProvider } from './twelvedata.provider';
+import { UnconfiguredMarketDataProvider, MarketDataProvider } from './market-data.provider';
 import { HistoricalResponse } from './market-data.types';
 
 @Controller('market-data')
 export class MarketDataController {
-  private readonly provider = new UnconfiguredMarketDataProvider();
+  private readonly provider: MarketDataProvider = process.env.TWELVE_DATA_API_KEY
+    ? new TwelveDataProvider()
+    : new UnconfiguredMarketDataProvider();
 
   @Get('status')
   async status() {
     const health = await this.provider.health();
     return {
-      status: health.live || health.historical ? 'available' : 'provider_required',
+      status: health.live || health.historical ? 'configured' : 'provider_required',
       provider: this.provider.name,
       ...health,
       message: health.live || health.historical
-        ? 'Verified market-data provider is available.'
+        ? 'Market-data provider is configured. Responses are sourced from the provider at request time.'
         : 'No market provider is configured. InvestIQ will not fabricate market data.',
     };
   }
@@ -35,7 +38,7 @@ export class MarketDataController {
       available: false,
       points: [],
       source: null,
-      message: 'Historical NAV data becomes available after a verified provider is configured.',
+      message: 'Historical NAV data requires a verified mutual-fund NAV provider. InvestIQ will not fabricate NAV history.',
     };
   }
 }
