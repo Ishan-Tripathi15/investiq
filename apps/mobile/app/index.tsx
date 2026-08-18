@@ -4,9 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, radius, spacing } from '@/theme';
 
 const watchlist = [
-  { symbol: 'NIFTY 50', value: 'Market data', change: 'Provider pending', positive: true },
-  { symbol: 'SENSEX', value: 'Market data', change: 'Provider pending', positive: true },
-  { symbol: 'RELIANCE', value: 'Market data', change: 'Provider pending', positive: true },
+  { symbol: 'NIFTY 50', value: 'Market data', change: 'Provider pending' },
+  { symbol: 'SENSEX', value: 'Market data', change: 'Provider pending' },
+  { symbol: 'RELIANCE', value: 'Market data', change: 'Provider pending' },
 ];
 
 function Stat({ label, value, detail }: { label: string; value: string; detail: string }) {
@@ -19,7 +19,7 @@ export default function HomeScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <View><Text style={styles.eyebrow}>INVESTIQ</Text><Text style={styles.title}>Good evening.</Text></View>
-          <View style={styles.avatar}><Text style={styles.avatarText}>IT</Text></View>
+          <View style={styles.avatar}><Text style={styles.avatarText}>IQ</Text></View>
         </View>
 
         <View style={styles.hero}>
@@ -30,12 +30,18 @@ export default function HomeScreen() {
 
         <View style={styles.statsRow}><Stat label="Invested" value="—" detail="Not connected" /><Stat label="Returns" value="—" detail="Not connected" /><Stat label="XIRR" value="—" detail="Not connected" /></View>
 
+        <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>Explore</Text><Text style={styles.link}>Intelligence</Text></View>
+        <View style={styles.exploreGrid}>
+          <Link href="/stocks" asChild><TouchableOpacity style={styles.exploreCard} activeOpacity={0.8}><Text style={styles.exploreIcon}>↗</Text><Text style={styles.exploreTitle}>Stocks</Text><Text style={styles.exploreSubtitle}>History, risk, financials & scenarios.</Text></TouchableOpacity></Link>
+          <Link href="/funds" asChild><TouchableOpacity style={styles.exploreCard} activeOpacity={0.8}><Text style={styles.exploreIcon}>◈</Text><Text style={styles.exploreTitle}>Mutual Funds</Text><Text style={styles.exploreSubtitle}>Fund X-Ray, returns & goal intelligence.</Text></TouchableOpacity></Link>
+        </View>
+
         <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>Investment Lab</Text><Link href="/lab" style={styles.link}>Open Lab</Link></View>
         <View style={styles.labGrid}>
-          <Link href="/lab" asChild><TouchableOpacity style={styles.labCard} activeOpacity={0.8}><><Text style={styles.labIcon}>₹</Text><Text style={styles.labTitle}>SIP</Text><Text style={styles.labSubtitle}>Model monthly investing with step-up scenarios.</Text></></TouchableOpacity></Link>
-          <Link href="/lab" asChild><TouchableOpacity style={styles.labCard} activeOpacity={0.8}><><Text style={styles.labIcon}>◈</Text><Text style={styles.labTitle}>Lumpsum</Text><Text style={styles.labSubtitle}>Project one-time wealth across scenarios.</Text></></TouchableOpacity></Link>
-          <Link href="/lab" asChild><TouchableOpacity style={styles.labCard} activeOpacity={0.8}><><Text style={styles.labIcon}>◎</Text><Text style={styles.labTitle}>Goal Planner</Text><Text style={styles.labSubtitle}>Work backwards from a target corpus.</Text></></TouchableOpacity></Link>
-          <Link href="/lab" asChild><TouchableOpacity style={styles.labCard} activeOpacity={0.8}><><Text style={styles.labIcon}>↗</Text><Text style={styles.labTitle}>Scenarios</Text><Text style={styles.labSubtitle}>Compare conservative, base and optimistic cases.</Text></></TouchableOpacity></Link>
+          <Link href="/lab" asChild><TouchableOpacity style={styles.labCard} activeOpacity={0.8}><Text style={styles.labIcon}>₹</Text><Text style={styles.labTitle}>SIP</Text><Text style={styles.labSubtitle}>Model monthly investing with step-up scenarios.</Text></TouchableOpacity></Link>
+          <Link href="/lab" asChild><TouchableOpacity style={styles.labCard} activeOpacity={0.8}><Text style={styles.labIcon}>◈</Text><Text style={styles.labTitle}>Lumpsum</Text><Text style={styles.labSubtitle}>Project one-time wealth across scenarios.</Text></TouchableOpacity></Link>
+          <Link href="/lab" asChild><TouchableOpacity style={styles.labCard} activeOpacity={0.8}><Text style={styles.labIcon}>◎</Text><Text style={styles.labTitle}>Goal Planner</Text><Text style={styles.labSubtitle}>Work backwards from a target corpus.</Text></TouchableOpacity></Link>
+          <Link href="/lab" asChild><TouchableOpacity style={styles.labCard} activeOpacity={0.8}><Text style={styles.labIcon}>△</Text><Text style={styles.labTitle}>Scenarios</Text><Text style={styles.labSubtitle}>Compare conservative, base and optimistic cases.</Text></TouchableOpacity></Link>
         </View>
 
         <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>Market pulse</Text><Text style={styles.link}>Verified feed</Text></View>
@@ -74,6 +80,11 @@ const styles = StyleSheet.create({
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 },
   sectionTitle: { color: colors.text, fontSize: 19, fontWeight: '800' },
   link: { color: colors.accent, fontSize: 12, fontWeight: '700' },
+  exploreGrid: { flexDirection: 'row', gap: spacing.sm },
+  exploreCard: { flex: 1, minHeight: 142, backgroundColor: colors.accentSoft, borderRadius: radius.md, padding: spacing.md, borderWidth: 1, borderColor: colors.border },
+  exploreIcon: { color: colors.accent, fontSize: 21, fontWeight: '900' },
+  exploreTitle: { color: colors.text, fontSize: 15, fontWeight: '900', marginTop: 17 },
+  exploreSubtitle: { color: colors.muted, fontSize: 10, lineHeight: 15, marginTop: 5 },
   labGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   labCard: { width: '48%', minHeight: 128, backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md, borderWidth: 1, borderColor: colors.border },
   labIcon: { color: colors.accent, fontSize: 21, fontWeight: '800' },
