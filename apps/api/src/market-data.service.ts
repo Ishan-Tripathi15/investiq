@@ -1,16 +1,19 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { MarketDataCache } from './market-data.cache';
-import { MarketDataProvider } from './market-data.provider';
+import { createMarketDataProvider, MarketDataProvider } from './market-data.provider';
 import { MarketDataRepository } from './market-data.repository';
 import { HistoricalResponse } from './market-data.types';
 
 @Injectable()
 export class MarketDataService implements OnModuleInit, OnModuleDestroy {
+  private readonly provider: MarketDataProvider = createMarketDataProvider();
+
   constructor(
-    private readonly provider: MarketDataProvider,
     private readonly repository: MarketDataRepository,
     private readonly cache: MarketDataCache,
   ) {}
+
+  getProvider(): MarketDataProvider { return this.provider; }
 
   async onModuleInit(): Promise<void> {
     await this.repository.ensureSchema();
@@ -23,9 +26,7 @@ export class MarketDataService implements OnModuleInit, OnModuleDestroy {
     const stored = await this.repository.get(symbol, from, to);
     if (stored.length > 0) {
       const response: HistoricalResponse = {
-        symbol: symbol.toUpperCase(),
-        available: true,
-        points: stored,
+        symbol: symbol.toUpperCase(), available: true, points: stored,
         source: { provider: 'postgres-cache', retrievedAt: new Date().toISOString() },
       };
       await this.cache.set(symbol, response, from, to);
