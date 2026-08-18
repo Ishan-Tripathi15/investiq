@@ -1,27 +1,31 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
+import { UnconfiguredMarketDataProvider } from './market-data.provider';
+import { HistoricalResponse } from './market-data.types';
 
 @Controller('market-data')
 export class MarketDataController {
+  private readonly provider = new UnconfiguredMarketDataProvider();
+
   @Get('status')
-  status() {
+  async status() {
+    const health = await this.provider.health();
     return {
-      status: 'provider_required',
-      live: false,
-      historical: false,
-      source: null,
-      message: 'No market provider is configured. InvestIQ will not fabricate market data.',
+      status: health.live || health.historical ? 'available' : 'provider_required',
+      provider: this.provider.name,
+      ...health,
+      message: health.live || health.historical
+        ? 'Verified market-data provider is available.'
+        : 'No market provider is configured. InvestIQ will not fabricate market data.',
     };
   }
 
   @Get('stocks/:symbol/history')
-  stockHistory(@Param('symbol') symbol: string) {
-    return {
-      symbol: symbol.toUpperCase(),
-      available: false,
-      points: [],
-      source: null,
-      message: 'Historical stock data becomes available after a verified provider is configured.',
-    };
+  async stockHistory(
+    @Param('symbol') symbol: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ): Promise<HistoricalResponse> {
+    return this.provider.stockHistory(symbol, from, to);
   }
 
   @Get('funds/:schemeId/history')
