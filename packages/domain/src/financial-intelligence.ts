@@ -44,11 +44,17 @@ export function cagr(first: number | undefined, last: number | undefined, years:
   return (Math.pow(last / first, 1 / years) - 1) * 100;
 }
 
+function elapsedYears(firstDate: string, lastDate: string): number {
+  return Math.max(1, (Date.parse(lastDate) - Date.parse(firstDate)) / 31557600000);
+}
+
 function scoreGrowth(periods: FinancialPeriodInput[]): number {
   const valid = periods.filter((p) => p.revenue != null && p.revenue > 0);
   if (valid.length < 2) return 0;
-  const years = Math.max(1, (new Date(valid.at(-1)!.fiscalDate).getTime() - new Date(valid[0].fiscalDate).getTime()) / 31557600000);
-  const growth = cagr(valid[0].revenue, valid.at(-1)!.revenue, years);
+  const first = valid[0];
+  const last = valid[valid.length - 1];
+  if (!first || !last || first.revenue == null || last.revenue == null) return 0;
+  const growth = cagr(first.revenue, last.revenue, elapsedYears(first.fiscalDate, last.fiscalDate));
   if (growth == null) return 0;
   return Math.max(0, Math.min(25, 12.5 + growth));
 }
@@ -59,21 +65,33 @@ export function financialTrends(periods: FinancialPeriodInput[]): FinancialTrend
     ['Revenue', (p) => p.revenue], ['EBITDA', (p) => p.ebitda], ['Net income', (p) => p.netIncome],
     ['EPS', (p) => p.eps], ['Free cash flow', (p) => p.freeCashFlow],
   ];
-  return metrics.map(([metric, get]) => {
+  return metrics.map(([metric, get]): FinancialTrend => {
     const valid = sorted.filter((p) => get(p) != null);
-    if (valid.length < 2) return { metric, direction: 'unavailable' as const };
-    const first = get(valid[0]); const latest = get(valid.at(-1)!);
-    const years = Math.max(1, (new Date(valid.at(-1)!.fiscalDate).getTime() - new Date(valid[0].fiscalDate).getTime()) / 31557600000);
-    const trend = first != null && latest != null ? latest - first : 0;
-    return { metric, first, latest, cagrPct: cagr(first, latest, years), direction: Math.abs(trend) < Math.abs(first ?? 1) * 0.03 ? 'flat' as const : trend > 0 ? 'up' as const : 'down' as const };
+    if (valid.length < 2) return { metric, direction: 'unavailable' };
+    const firstPeriod = valid[0];
+    const latestPeriod = valid[valid.length - 1];
+    if (!firstPeriod || !latestPeriod) return { metric, direction: 'unavailable' };
+    const first = get(firstPeriod);
+    const latest = get(latestPeriod);
+    if (first == null || latest == null) return { metric, direction: 'unavailable' };
+    const trend = latest - first;
+    const result: FinancialTrend = {
+      metric,
+      first,
+      latest,
+      direction: Math.abs(trend) < Math.abs(first || 1) * 0.03 ? 'flat' : trend > 0 ? 'up' : 'down',
+    };
+    const growth = cagr(first, latest, elapsedYears(firstPeriod.fiscalDate, latestPeriod.fiscalDate));
+    if (growth != null) result.cagrPct = growth;
+    return result;
   });
 }
 
 export function calculateFinancialQuality(periods: FinancialPeriodInput[]): FinancialQualityScore {
   const sorted = [...periods].sort((a, b) => a.fiscalDate.localeCompare(b.fiscalDate));
   if (!sorted.length) return { score: 0, label: 'weak', components: { profitability: 0, growth: 0, cashFlow: 0, balanceSheet: 0, consistency: 0 }, evidence: ['No verified financial periods are available.'] };
-
-  const latest = sorted.at(-1)!;
+  const latest = sorted[sorted.length - 1];
+  if (!latest) return { score: 0, label: 'weak', components: { profitability: 0, growth: 0, cashFlow: 0, balanceSheet: 0, consistency: 0 }, evidence: ['No verified financial periods are available.'] };
   const profitability = Math.max(0, Math.min(25, (latest.netMarginPct ?? 0) * 1.25 + (latest.roe ?? 0) * 0.5));
   const growth = scoreGrowth(sorted);
   const cashFlow = latest.freeCashFlow != null && latest.netIncome != null
@@ -90,7 +108,7 @@ export function calculateFinancialQuality(periods: FinancialPeriodInput[]): Fina
   if (latest.roe != null) evidence.push(`Latest ROE: ${latest.roe.toFixed(1)}%.`);
   if (latest.freeCashFlow != null) evidence.push(`Latest reported free cash flow: ${latest.freeCashFlow >= 0 ? 'positive' : 'negative'}.`);
   if (latest.totalDebt != null && latest.totalCash != null) evidence.push(`Debt vs cash: ${latest.totalDebt <= latest.totalCash ? 'cash covers reported debt' : 'reported debt exceeds cash'}.`);
-  evidence.push(`${profitableYears}/${consistencyRows.length || 0} available periods show positive net income.`);
+  evidence.push(`${profitableYears}/${consistencyRows.length} available periods show positive net income.`);
   return { score: raw, label, components: { profitability: Math.round(profitability), growth: Math.round(growth), cashFlow: Math.round(cashFlow), balanceSheet: Math.round(leverage), consistency: Math.round(consistency) }, evidence };
 }
 
