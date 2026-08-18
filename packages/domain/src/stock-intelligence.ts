@@ -89,17 +89,32 @@ export function calculateStockStats(points: PricePoint[]): StockStats {
   };
 }
 
-/** Finds historical daily declines at or below the trigger, then measures subsequent calendar-day outcomes. */
+/**
+ * Finds historical daily declines at or below the trigger, then measures subsequent
+ * calendar-day outcomes. Qualifying declines inside the same selloff episode are
+ * treated as one observation so a prolonged crash cannot dominate the sample.
+ */
 export function historicalEventOutcomes(points: PricePoint[], triggerPct: number, horizons: number[] = [5, 20, 60, 252]): EventOutcome[] {
   const data = ordered(points);
   if (triggerPct >= 0) throw new Error('Trigger must be negative, for example -8 for an 8% fall');
+
+  // A new event is accepted only after the previous qualifying event is at least
+  // 20 trading observations behind it. This avoids counting every red day in a
+  // multi-day selloff as an independent historical analogue.
+  const eventIndices: number[] = [];
+  const cooldownObservations = 20;
+  for (let i = 1; i < data.length; i += 1) {
+    const eventReturn = (data[i]!.close / data[i - 1]!.close - 1) * 100;
+    if (eventReturn <= triggerPct && (eventIndices.length === 0 || i - eventIndices[eventIndices.length - 1]! > cooldownObservations)) {
+      eventIndices.push(i);
+    }
+  }
+
   return horizons.filter((horizon) => horizon > 0).map((horizonDays) => {
     const outcomes: number[] = [];
-    for (let i = 1; i < data.length; i += 1) {
-      const eventReturn = (data[i]!.close / data[i - 1]!.close - 1) * 100;
-      if (eventReturn > triggerPct) continue;
-      const target = Date.parse(data[i]!.timestamp) + horizonDays * DAY_MS;
-      let low = i + 1;
+    for (const eventIndex of eventIndices) {
+      const target = Date.parse(data[eventIndex]!.timestamp) + horizonDays * DAY_MS;
+      let low = eventIndex + 1;
       let high = data.length - 1;
       let match = -1;
       while (low <= high) {
@@ -109,7 +124,7 @@ export function historicalEventOutcomes(points: PricePoint[], triggerPct: number
           high = middle - 1;
         } else low = middle + 1;
       }
-      if (match >= 0) outcomes.push((data[match]!.close / data[i]!.close - 1) * 100);
+      if (match >= 0) outcomes.push((data[match]!.close / data[eventIndex]!.close - 1) * 100);
     }
     return {
       horizonDays,
