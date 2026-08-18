@@ -36,3 +36,5 @@ export function projectLumpsum(principal: number, years: number, assumptions: Re
     futureValue: lumpsumFutureValue(principal, annualReturn, years),
   }));
 }
+
+export * from './mutual-fund-analytics';
