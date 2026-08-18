@@ -35,6 +35,12 @@ export class MarketDataController {
     return this.marketData.history(symbol, from, to);
   }
 
+  @Get('funds/search')
+  async fundSearch(@Query('q') query = '', @Query('limit') limit?: string) {
+    const parsedLimit = limit ? Number(limit) : undefined;
+    return this.mutualFunds.search(query, Number.isFinite(parsedLimit) ? parsedLimit : undefined);
+  }
+
   @Get('funds/:schemeId/history')
   async fundHistory(
     @Param('schemeId') schemeId: string,
