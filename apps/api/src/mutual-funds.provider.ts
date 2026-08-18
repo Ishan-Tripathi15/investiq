@@ -13,7 +13,8 @@ function parseDate(value: string): Date | null {
   const match = /^(\d{1,2})-([A-Za-z]{3})-(\d{4})$/.exec(value.trim());
   if (!match) return null;
   const months: Record<string, number> = { Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5, Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11 };
-  const month = months[match[2]];
+  const monthName = match[2];
+  const month = monthName ? months[monthName] : undefined;
   if (month == null) return null;
   return new Date(Date.UTC(Number(match[3]), month, Number(match[1])));
 }
@@ -31,7 +32,8 @@ function parseHistory(body: string): FundHistoricalPoint[] {
     const columns = line.split(';').map((column) => column.trim());
     if (columns.length < 7) continue;
     const nav = Number(columns[3]);
-    const date = parseDate(columns[6]);
+    const dateValue = columns[6];
+    const date = dateValue ? parseDate(dateValue) : null;
     if (!Number.isFinite(nav) || !date) continue;
     points.push({ timestamp: date.toISOString(), nav });
   }
@@ -94,13 +96,14 @@ export class AmfiMutualFundProvider implements MutualFundProvider {
 
       const unique = new Map(points.map((point) => [point.timestamp, point]));
       const sorted = [...unique.values()].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
-      return {
+      const response: FundHistoricalResponse = {
         schemeId,
         available: sorted.length > 0,
         points: sorted,
         source: sorted.length > 0 ? { provider: this.name, retrievedAt: new Date().toISOString() } : null,
-        message: sorted.length > 0 ? undefined : 'AMFI returned no NAV observations for this scheme/date range.',
       };
+      if (sorted.length === 0) response.message = 'AMFI returned no NAV observations for this scheme/date range.';
+      return response;
     } catch (error) {
       return {
         schemeId, available: false, points: [], source: null,
