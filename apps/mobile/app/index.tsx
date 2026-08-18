@@ -1,21 +1,16 @@
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Link } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, radius, spacing } from '@/theme';
 
 const watchlist = [
-  { symbol: 'NIFTY 50', value: '25,012.40', change: '+0.72%', positive: true },
-  { symbol: 'SENSEX', value: '81,902.11', change: '+0.54%', positive: true },
-  { symbol: 'RELIANCE', value: '1,421.35', change: '-0.31%', positive: false },
+  { symbol: 'NIFTY 50', value: 'Market data', change: 'Provider pending', positive: true },
+  { symbol: 'SENSEX', value: 'Market data', change: 'Provider pending', positive: true },
+  { symbol: 'RELIANCE', value: 'Market data', change: 'Provider pending', positive: true },
 ];
 
 function Stat({ label, value, detail }: { label: string; value: string; detail: string }) {
-  return (
-    <View style={styles.stat}>
-      <Text style={styles.muted}>{label}</Text>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statDetail}>{detail}</Text>
-    </View>
-  );
+  return <View style={styles.stat}><Text style={styles.muted}>{label}</Text><Text style={styles.statValue}>{value}</Text><Text style={styles.statDetail}>{detail}</Text></View>;
 }
 
 export default function HomeScreen() {
@@ -23,66 +18,32 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <View>
-            <Text style={styles.eyebrow}>INVESTIQ</Text>
-            <Text style={styles.title}>Good evening.</Text>
-          </View>
+          <View><Text style={styles.eyebrow}>INVESTIQ</Text><Text style={styles.title}>Good evening.</Text></View>
           <View style={styles.avatar}><Text style={styles.avatarText}>IT</Text></View>
         </View>
 
         <View style={styles.hero}>
-          <View style={styles.heroTop}>
-            <View>
-              <Text style={styles.muted}>Portfolio value</Text>
-              <Text style={styles.heroValue}>₹8,42,650</Text>
-            </View>
-            <View style={styles.live}><View style={styles.dot} /><Text style={styles.liveText}>LIVE</Text></View>
-          </View>
-          <Text style={styles.positive}>+₹12,480  ·  +1.50% today</Text>
+          <View style={styles.heroTop}><View><Text style={styles.muted}>Portfolio value</Text><Text style={styles.heroValue}>Connect account</Text></View><View style={styles.live}><View style={styles.dot} /><Text style={styles.liveText}>READY</Text></View></View>
+          <Text style={styles.positive}>Your live portfolio layer will appear here after secure account integration.</Text>
           <View style={styles.chart}><View style={styles.chartLine} /></View>
         </View>
 
-        <View style={styles.statsRow}>
-          <Stat label="Invested" value="₹7.21L" detail="Principal" />
-          <Stat label="Returns" value="₹1.21L" detail="+16.8%" />
-          <Stat label="XIRR" value="18.4%" detail="Since start" />
-        </View>
+        <View style={styles.statsRow}><Stat label="Invested" value="—" detail="Not connected" /><Stat label="Returns" value="—" detail="Not connected" /><Stat label="XIRR" value="—" detail="Not connected" /></View>
 
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Investment Lab</Text>
-          <Text style={styles.link}>Explore all</Text>
-        </View>
+        <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>Investment Lab</Text><Link href="/lab" style={styles.link}>Open Lab</Link></View>
         <View style={styles.labGrid}>
-          {[
-            ['SIP', 'Plan monthly investing', '₹'],
-            ['Lumpsum', 'Project one-time wealth', '◈'],
-            ['Goal Planner', 'Work backwards from a goal', '◎'],
-            ['History', 'See what ₹1L could have done', '↗'],
-          ].map(([title, subtitle, icon]) => (
-            <TouchableOpacity key={title} style={styles.labCard} activeOpacity={0.8}>
-              <Text style={styles.labIcon}>{icon}</Text>
-              <Text style={styles.labTitle}>{title}</Text>
-              <Text style={styles.labSubtitle}>{subtitle}</Text>
-            </TouchableOpacity>
-          ))}
+          <Link href="/lab" asChild><TouchableOpacity style={styles.labCard} activeOpacity={0.8}><><Text style={styles.labIcon}>₹</Text><Text style={styles.labTitle}>SIP</Text><Text style={styles.labSubtitle}>Model monthly investing with step-up scenarios.</Text></></TouchableOpacity></Link>
+          <Link href="/lab" asChild><TouchableOpacity style={styles.labCard} activeOpacity={0.8}><><Text style={styles.labIcon}>◈</Text><Text style={styles.labTitle}>Lumpsum</Text><Text style={styles.labSubtitle}>Project one-time wealth across scenarios.</Text></></TouchableOpacity></Link>
+          <Link href="/lab" asChild><TouchableOpacity style={styles.labCard} activeOpacity={0.8}><><Text style={styles.labIcon}>◎</Text><Text style={styles.labTitle}>Goal Planner</Text><Text style={styles.labSubtitle}>Work backwards from a target corpus.</Text></></TouchableOpacity></Link>
+          <Link href="/lab" asChild><TouchableOpacity style={styles.labCard} activeOpacity={0.8}><><Text style={styles.labIcon}>↗</Text><Text style={styles.labTitle}>Scenarios</Text><Text style={styles.labSubtitle}>Compare conservative, base and optimistic cases.</Text></></TouchableOpacity></Link>
         </View>
 
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Market pulse</Text>
-          <Text style={styles.link}>View markets</Text>
-        </View>
+        <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>Market pulse</Text><Text style={styles.link}>Verified feed</Text></View>
         <View style={styles.marketCard}>
-          {watchlist.map((item, index) => (
-            <View key={item.symbol} style={[styles.marketRow, index === watchlist.length - 1 && styles.noBorder]}>
-              <View><Text style={styles.symbol}>{item.symbol}</Text><Text style={styles.muted}>Indian market</Text></View>
-              <View style={styles.marketRight}><Text style={styles.price}>{item.value}</Text><Text style={item.positive ? styles.positive : styles.negative}>{item.change}</Text></View>
-            </View>
-          ))}
+          {watchlist.map((item, index) => <View key={item.symbol} style={[styles.marketRow, index === watchlist.length - 1 && styles.noBorder]}><View><Text style={styles.symbol}>{item.symbol}</Text><Text style={styles.muted}>Live provider integration</Text></View><View style={styles.marketRight}><Text style={styles.price}>{item.value}</Text><Text style={styles.muted}>{item.change}</Text></View></View>)}
         </View>
 
-        <View style={styles.disclaimer}>
-          <Text style={styles.disclaimerText}>Historical performance is not a guarantee of future returns. Market data will be supplied by verified providers in production.</Text>
-        </View>
+        <View style={styles.disclaimer}><Text style={styles.disclaimerText}>No fabricated market prices are shown. Production market data will come only from verified providers. Projections are assumptions, not guarantees.</Text></View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -99,9 +60,8 @@ const styles = StyleSheet.create({
   hero: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.border },
   heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   muted: { color: colors.muted, fontSize: 12 },
-  heroValue: { color: colors.text, fontSize: 32, fontWeight: '800', marginTop: 5 },
-  positive: { color: colors.positive, fontSize: 13, fontWeight: '700', marginTop: 7 },
-  negative: { color: colors.negative, fontSize: 13, fontWeight: '700', marginTop: 7 },
+  heroValue: { color: colors.text, fontSize: 27, fontWeight: '800', marginTop: 5 },
+  positive: { color: colors.positive, fontSize: 12, fontWeight: '700', marginTop: 7, lineHeight: 18 },
   live: { flexDirection: 'row', gap: 6, alignItems: 'center', backgroundColor: colors.accentSoft, paddingHorizontal: 9, paddingVertical: 6, borderRadius: radius.pill },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.accent },
   liveText: { color: colors.accent, fontSize: 10, fontWeight: '800' },
@@ -124,7 +84,7 @@ const styles = StyleSheet.create({
   noBorder: { borderBottomWidth: 0 },
   symbol: { color: colors.text, fontSize: 14, fontWeight: '800' },
   marketRight: { alignItems: 'flex-end' },
-  price: { color: colors.text, fontSize: 14, fontWeight: '700' },
+  price: { color: colors.text, fontSize: 13, fontWeight: '700' },
   disclaimer: { padding: spacing.md, backgroundColor: colors.surfaceElevated, borderRadius: radius.md },
   disclaimerText: { color: colors.muted, fontSize: 10, lineHeight: 15 },
 });
