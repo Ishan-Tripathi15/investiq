@@ -21,7 +21,7 @@ export async function setBiometricLockEnabled(enabled: boolean) {
     if (!available.hardware || !available.enrolled) throw new Error('A supported enrolled biometric is required');
     const result = await LocalAuthentication.authenticateAsync({
       promptMessage: 'Enable InvestIQ biometric protection',
-      disableDeviceFallback: false,
+      disableDeviceFallback: true,
     });
     if (!result.success) throw new Error('Biometric verification was not completed');
     await SecureStore.setItemAsync(KEY, '1', { keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY });
@@ -35,7 +35,7 @@ export async function requireBiometricUnlock() {
   if (!(await isBiometricLockEnabled())) return true;
   const result = await LocalAuthentication.authenticateAsync({
     promptMessage: 'Unlock InvestIQ',
-    disableDeviceFallback: false,
+    disableDeviceFallback: true,
   });
   return result.success;
 }
