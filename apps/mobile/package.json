@@ -15,7 +15,9 @@
   "dependencies": {
     "@investiq/domain": "workspace:*",
     "expo": "^57.0.0",
+    "expo-local-authentication": "~17.0.0",
     "expo-router": "~6.0.0",
+    "expo-secure-store": "~15.0.0",
     "expo-status-bar": "~3.0.0",
     "react": "19.2.3",
     "react-native": "0.86.0",
