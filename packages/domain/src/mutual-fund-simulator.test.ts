@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import test from 'node:test';
+import assert from 'node:assert/strict';
 import { analyzeFundGoal, simulateHistoricalLumpsum, simulateHistoricalLumpsumAt } from './mutual-fund-simulator';
 
 const points = [
@@ -8,28 +9,28 @@ const points = [
   { timestamp: '2023-01-01T00:00:00.000Z', nav: 180 },
 ];
 
-describe('mutual fund simulator', () => {
-  it('simulates a historical lumpsum from the first observed NAV', () => {
-    const result = simulateHistoricalLumpsum(points, 10000)!;
-    expect(result.units).toBe(100);
-    expect(result.endingValue).toBe(18000);
-    expect(result.profit).toBe(8000);
-    expect(result.absoluteReturnPct).toBe(80);
-    expect(result.annualizedReturnPct).toBeGreaterThan(21);
-  });
+test('mutual fund simulator: historical lumpsum from first observed NAV', () => {
+  const result = simulateHistoricalLumpsum(points, 10000);
+  assert.ok(result);
+  assert.equal(result.units, 100);
+  assert.equal(result.endingValue, 18000);
+  assert.equal(result.profit, 8000);
+  assert.equal(result.absoluteReturnPct, 80);
+  assert.ok(result.annualizedReturnPct > 21);
+});
 
-  it('supports a specific historical start date and horizon', () => {
-    const result = simulateHistoricalLumpsumAt(points, 50000, '2021-01-01T00:00:00.000Z', 2)!;
-    expect(result.startNav).toBe(120);
-    expect(result.endNav).toBe(180);
-    expect(result.endingValue).toBe(75000);
-  });
+test('mutual fund simulator: specific historical start date and horizon', () => {
+  const result = simulateHistoricalLumpsumAt(points, 50000, '2021-01-01T00:00:00.000Z', 2);
+  assert.ok(result);
+  assert.equal(result.startNav, 120);
+  assert.equal(result.endNav, 180);
+  assert.equal(result.endingValue, 75000);
+});
 
-  it('calculates scenario-based goal requirements', () => {
-    const result = analyzeFundGoal(1000000, 10, { conservative: 8, base: 12, optimistic: 15 });
-    expect(result.scenarios).toHaveLength(3);
-    expect(result.scenarios[0]!.requiredInitialInvestment).toBeCloseTo(463193, -1);
-    expect(result.scenarios[1]!.requiredInitialInvestment).toBeLessThan(result.scenarios[0]!.requiredInitialInvestment);
-    expect(result.scenarios[2]!.requiredInitialInvestment).toBeLessThan(result.scenarios[1]!.requiredInitialInvestment);
-  });
+test('mutual fund simulator: scenario-based goal requirements', () => {
+  const result = analyzeFundGoal(1000000, 10, { conservative: 8, base: 12, optimistic: 15 });
+  assert.equal(result.scenarios.length, 3);
+  assert.ok(Math.abs(result.scenarios[0]!.requiredInitialInvestment - 463193) < 20);
+  assert.ok(result.scenarios[1]!.requiredInitialInvestment < result.scenarios[0]!.requiredInitialInvestment);
+  assert.ok(result.scenarios[2]!.requiredInitialInvestment < result.scenarios[1]!.requiredInitialInvestment);
 });
