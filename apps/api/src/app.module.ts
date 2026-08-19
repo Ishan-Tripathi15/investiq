@@ -1,4 +1,6 @@
 import { Controller, Get, Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { MarketDataCache } from './market-data.cache';
 import { MarketDataController } from './market-data.controller';
 import { MarketDataRepository } from './market-data.repository';
@@ -23,8 +25,10 @@ import { AuthService } from './auth.service';
 class HealthController { @Get() health() { return { status: 'ok', service: 'investiq-api', version: 'v1' }; } }
 
 @Module({
+  imports: [ThrottlerModule.forRoot({ throttlers: [{ name: 'default', ttl: 60_000, limit: 120 }] })],
   controllers: [HealthController, AuthController, MarketDataController, FundamentalsController, TradingController, TradingRiskController],
   providers: [
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
     AuthRepository, AuthService, AuthGuard,
     MarketDataService, MarketDataRepository, MarketDataCache, MutualFundsService, FundamentalsService,
     HistoricalValuationService, TradingRepository, TradingRiskService, TradingService,
