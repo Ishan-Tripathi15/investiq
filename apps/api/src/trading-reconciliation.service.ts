@@ -1,16 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { TradingRepository } from './trading.repository';
 import { createBrokerAdapter } from './trading.provider';
+import { BrokerConnectionRepository } from './broker-connection.repository';
 import type { BrokerAdapter } from './trading.types';
 import type { TradingReconciliation } from './trading-reconciliation.types';
 
 @Injectable()
 export class TradingReconciliationService {
   private readonly broker: BrokerAdapter;
-  constructor(private readonly repository: TradingRepository) { this.broker = createBrokerAdapter(); }
+  constructor(private readonly repository: TradingRepository, connections: BrokerConnectionRepository) { this.broker = createBrokerAdapter(connections); }
 
   async reconcile(userId: string): Promise<TradingReconciliation> {
-    const checkedAt = new Date().toISOString(); const broker = await this.broker.health();
+    const checkedAt = new Date().toISOString(); const broker = await this.broker.health(userId);
     if (!broker.configured || !broker.connected) return { status: 'unavailable', checkedAt, broker, account: null, positions: [], brokerOrders: [], executionRequests: 0, completedExecutions: 0, unmatchedExecutions: [], warnings: [broker.message], message: 'Reconciliation is unavailable until a supported execution broker is connected.' };
     const [account, positions, brokerOrders, executionRequests] = await Promise.all([this.broker.getAccount(userId), this.broker.getPositions(userId), this.broker.listOrders(userId), this.repository.listExecutionRequests(userId)]);
     const brokerOrderIds = new Set(brokerOrders.map((order) => order.id));
