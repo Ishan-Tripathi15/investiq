@@ -6,6 +6,7 @@ import { MarketDataService } from './market-data.service';
 import { MutualFundsService } from './mutual-funds.service';
 import { FundamentalsController } from './fundamentals.controller';
 import { FundamentalsService } from './fundamentals.service';
+import { HistoricalValuationService } from './historical-valuation.service';
 
 @Controller('health')
 class HealthController {
@@ -17,6 +18,6 @@ class HealthController {
 
 @Module({
   controllers: [HealthController, MarketDataController, FundamentalsController],
-  providers: [MarketDataService, MarketDataRepository, MarketDataCache, MutualFundsService, FundamentalsService],
+  providers: [MarketDataService, MarketDataRepository, MarketDataCache, MutualFundsService, FundamentalsService, HistoricalValuationService],
 })
 export class AppModule {}
