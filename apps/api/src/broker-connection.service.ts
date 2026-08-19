@@ -41,7 +41,7 @@ export class BrokerConnectionService {
     const url = new URL(KITE_LOGIN_ROOT);
     url.searchParams.set('v', '3');
     url.searchParams.set('api_key', apiKey);
-    url.searchParams.set('redirect_params', `state=${encodeURIComponent(state)}`);
+    url.searchParams.set('redirect_params', `state=${state}`);
     return { provider: PROVIDER, loginUrl: url.toString(), redirectUrl };
   }
 
