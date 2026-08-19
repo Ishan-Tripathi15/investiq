@@ -15,6 +15,7 @@
   "dependencies": {
     "@investiq/domain": "workspace:*",
     "expo": "^57.0.0",
+    "expo-constants": "~18.0.0",
     "expo-crypto": "~57.0.1",
     "expo-local-authentication": "~17.0.0",
     "expo-notifications": "~57.0.7",
