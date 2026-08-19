@@ -22,5 +22,6 @@ export function projectLumpsum(principal: number, years: number, assumptions: Re
 }
 export * from './mutual-fund-analytics';
 export * from './stock-intelligence';
+export * from './stock-technical';
 export * from './financial-intelligence';
 export * from './scenario-engine';
