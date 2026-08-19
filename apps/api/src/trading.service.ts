@@ -4,12 +4,19 @@ import { createDraftOrder, type OrderRequest, validateOrder, validateOrderCapabi
 import { createBrokerAdapter } from './trading.provider';
 import { TradingRepository } from './trading.repository';
 import { TradingRiskService } from './trading-risk.service';
+import { BrokerConnectionRepository } from './broker-connection.repository';
 import type { BrokerAdapter } from './trading.types';
 
 @Injectable()
 export class TradingService {
   private readonly broker: BrokerAdapter;
-  constructor(private readonly repository: TradingRepository, private readonly risk: TradingRiskService) { this.broker = createBrokerAdapter(); }
+  constructor(
+    private readonly repository: TradingRepository,
+    private readonly risk: TradingRiskService,
+    private readonly connections: BrokerConnectionRepository,
+  ) {
+    this.broker = createBrokerAdapter(connections);
+  }
 
   async status() { return this.broker.health(); }
   async capabilities() { return this.broker.capabilities(); }
@@ -25,7 +32,7 @@ export class TradingService {
     const errors = validateOrder(request);
     if (errors.length) throw new BadRequestException({ message: 'Invalid order', errors });
     const estimatedValue = (request.price ?? 0) * request.quantity;
-    const health = await this.broker.health();
+    const health = await this.broker.health(userId);
     const capabilities = await this.capabilityCheck(request);
     const risk = health.configured && health.connected && capabilities.supported ? await this.risk.evaluate(userId, request) : { decision: 'unavailable' as const, checks: [], message: !capabilities.supported ? 'Broker capability checks did not approve this order.' : health.message };
     void this.repository.audit(userId, 'order.previewed', { request, capabilities, risk });
@@ -45,7 +52,7 @@ export class TradingService {
       void this.repository.audit(userId, 'order.execution_requested', { request }, orderId, key);
     } else void this.repository.audit(userId, 'order.execution_requested', { request }, orderId);
 
-    const health = await this.broker.health();
+    const health = await this.broker.health(userId);
     if (!health.configured || !health.connected) {
       if (key) await this.repository.failExecution(key, health.message);
       void this.repository.audit(userId, 'order.execution_unavailable', { request, reason: health.message }, orderId, key);
@@ -79,7 +86,7 @@ export class TradingService {
     }
   }
 
-  async cancelOrder(userId: string, orderId: string) { const health = await this.broker.health(); if (!health.configured || !health.connected) throw new ServiceUnavailableException(health.message); const order = await this.broker.cancelOrder(userId, orderId); void this.repository.audit(userId, 'order.cancelled', { order }, orderId); return order; }
+  async cancelOrder(userId: string, orderId: string) { const health = await this.broker.health(userId); if (!health.configured || !health.connected) throw new ServiceUnavailableException(health.message); const order = await this.broker.cancelOrder(userId, orderId); void this.repository.audit(userId, 'order.cancelled', { order }, orderId); return order; }
   async getOrder(userId: string, orderId: string) { return this.broker.getOrder(userId, orderId); }
   async listOrders(userId: string) { return this.broker.listOrders(userId); }
   async positions(userId: string) { return this.broker.getPositions(userId); }
