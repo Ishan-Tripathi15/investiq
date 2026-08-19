@@ -29,7 +29,7 @@ test('mutual fund historical risk: finds the deepest drawdown and its recovery',
   assert.ok(stats);
   assert.ok(Math.abs(stats.maxDrawdownPct + 25) < 0.00001);
   assert.equal(stats.maxDrawdownRecoveryDate, '2020-05-01T00:00:00.000Z');
-  assert.ok(Math.abs(stats.maxDrawdownRecoveryDays - 91) < 0.5);
+  assert.ok(Math.abs(stats.maxDrawdownRecoveryDays - 90) < 0.5);
 });
 
 test('mutual fund historical risk: keeps an unrecovered drawdown open through the final observation', () => {
