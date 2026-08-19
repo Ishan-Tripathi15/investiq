@@ -27,6 +27,7 @@ import { MfaService } from './mfa.service';
 import { ProfileController } from './profile.controller';
 import { ProfileRepository } from './profile.repository';
 import { ProfileService } from './profile.service';
+import { KycService } from './kyc.service';
 import { requestContextMiddleware } from './request-context.middleware';
 import { HttpObservabilityInterceptor } from './http-observability.interceptor';
 import { BrokerConnectionController } from './broker-connection.controller';
@@ -53,7 +54,7 @@ class HealthController { @Get() health() { return { status: 'ok', service: 'inve
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_INTERCEPTOR, useClass: HttpObservabilityInterceptor },
-    AuthRepository, AuthService, AuthRiskService, AuthGuard, MfaRepository, MfaService, ProfileRepository, ProfileService,
+    AuthRepository, AuthService, AuthRiskService, AuthGuard, MfaRepository, MfaService, ProfileRepository, ProfileService, KycService,
     SecurityActivityRepository, SecurityActivityService, SecurityNotificationsRepository, SecurityNotificationsService,
     NotificationDeliveryRepository, NotificationDeliveryService,
     MarketDataService, MarketDataRepository, MarketDataCache, MutualFundsService, FundamentalsService,
