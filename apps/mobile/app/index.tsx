@@ -2,111 +2,14 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 import { Link } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, radius, spacing } from '@/theme';
-
-const watchlist = [
-  { symbol: 'NIFTY 50', value: 'Market data', change: 'Provider pending' },
-  { symbol: 'SENSEX', value: 'Market data', change: 'Provider pending' },
-  { symbol: 'RELIANCE', value: 'Market data', change: 'Provider pending' },
-];
-
-function Stat({ label, value, detail }: { label: string; value: string; detail: string }) {
-  return <View style={styles.stat}><Text style={styles.muted}>{label}</Text><Text style={styles.statValue}>{value}</Text><Text style={styles.statDetail}>{detail}</Text></View>;
-}
-
-export default function HomeScreen() {
-  return (
-    <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <View><Text style={styles.eyebrow}>INVESTIQ</Text><Text style={styles.title}>Good evening.</Text></View>
-          <View style={styles.avatar}><Text style={styles.avatarText}>IQ</Text></View>
-        </View>
-
-        <View style={styles.hero}>
-          <View style={styles.heroTop}><View><Text style={styles.muted}>Portfolio value</Text><Text style={styles.heroValue}>Connect account</Text></View><View style={styles.live}><View style={styles.dot} /><Text style={styles.liveText}>READY</Text></View></View>
-          <Text style={styles.positive}>Your live portfolio layer will appear here after secure account integration.</Text>
-          <View style={styles.chart}><View style={styles.chartLine} /></View>
-        </View>
-
-        <View style={styles.statsRow}><Stat label="Invested" value="—" detail="Not connected" /><Stat label="Returns" value="—" detail="Not connected" /><Stat label="XIRR" value="—" detail="Not connected" /></View>
-
-        <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>Trading</Text><Text style={styles.link}>Execution layer</Text></View>
-        <View style={styles.tradingGrid}>
-          <Link href="/portfolio" asChild><TouchableOpacity style={styles.tradingCard} activeOpacity={0.8}><Text style={styles.tradingIcon}>◉</Text><Text style={styles.tradingTitle}>Portfolio</Text><Text style={styles.tradingSubtitle}>Positions, balances and verified P&L.</Text></TouchableOpacity></Link>
-          <Link href="/trading" asChild><TouchableOpacity style={styles.tradingCard} activeOpacity={0.8}><Text style={styles.tradingIcon}>⇄</Text><Text style={styles.tradingTitle}>Trading Terminal</Text><Text style={styles.tradingSubtitle}>Orders, validation and broker execution.</Text></TouchableOpacity></Link>
-        </View>
-
-        <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>Explore</Text><Text style={styles.link}>Intelligence</Text></View>
-        <View style={styles.exploreGrid}>
-          <Link href="/stocks" asChild><TouchableOpacity style={styles.exploreCard} activeOpacity={0.8}><Text style={styles.exploreIcon}>↗</Text><Text style={styles.exploreTitle}>Stocks</Text><Text style={styles.exploreSubtitle}>History, risk, financials & scenarios.</Text></TouchableOpacity></Link>
-          <Link href="/funds" asChild><TouchableOpacity style={styles.exploreCard} activeOpacity={0.8}><Text style={styles.exploreIcon}>◈</Text><Text style={styles.exploreTitle}>Mutual Funds</Text><Text style={styles.exploreSubtitle}>Fund X-Ray, returns & goal intelligence.</Text></TouchableOpacity></Link>
-        </View>
-
-        <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>Investment Lab</Text><Link href="/lab" style={styles.link}>Open Lab</Link></View>
-        <View style={styles.labGrid}>
-          <Link href="/lab" asChild><TouchableOpacity style={styles.labCard} activeOpacity={0.8}><Text style={styles.labIcon}>₹</Text><Text style={styles.labTitle}>SIP</Text><Text style={styles.labSubtitle}>Model monthly investing with step-up scenarios.</Text></TouchableOpacity></Link>
-          <Link href="/lab" asChild><TouchableOpacity style={styles.labCard} activeOpacity={0.8}><Text style={styles.labIcon}>◈</Text><Text style={styles.labTitle}>Lumpsum</Text><Text style={styles.labSubtitle}>Project one-time wealth across scenarios.</Text></TouchableOpacity></Link>
-          <Link href="/lab" asChild><TouchableOpacity style={styles.labCard} activeOpacity={0.8}><Text style={styles.labIcon}>◎</Text><Text style={styles.labTitle}>Goal Planner</Text><Text style={styles.labSubtitle}>Work backwards from a target corpus.</Text></TouchableOpacity></Link>
-          <Link href="/lab" asChild><TouchableOpacity style={styles.labCard} activeOpacity={0.8}><Text style={styles.labIcon}>△</Text><Text style={styles.labTitle}>Scenarios</Text><Text style={styles.labSubtitle}>Compare conservative, base and optimistic cases.</Text></TouchableOpacity></Link>
-        </View>
-
-        <View style={styles.sectionHeader}><Text style={styles.sectionTitle}>Market pulse</Text><Text style={styles.link}>Verified feed</Text></View>
-        <View style={styles.marketCard}>
-          {watchlist.map((item, index) => <View key={item.symbol} style={[styles.marketRow, index === watchlist.length - 1 && styles.noBorder]}><View><Text style={styles.symbol}>{item.symbol}</Text><Text style={styles.muted}>Live provider integration</Text></View><View style={styles.marketRight}><Text style={styles.price}>{item.value}</Text><Text style={styles.muted}>{item.change}</Text></View></View>)}
-        </View>
-
-        <View style={styles.disclaimer}><Text style={styles.disclaimerText}>No fabricated market prices are shown. Production market data will come only from verified providers. Projections are assumptions, not guarantees.</Text></View>
-      </ScrollView>
-    </SafeAreaView>
-  );
-}
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
-  content: { padding: spacing.lg, paddingBottom: 48, gap: spacing.lg },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  eyebrow: { color: colors.accent, fontSize: 12, fontWeight: '800', letterSpacing: 2 },
-  title: { color: colors.text, fontSize: 30, fontWeight: '700', marginTop: 4 },
-  avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.accentSoft, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.border },
-  avatarText: { color: colors.accent, fontWeight: '800' },
-  hero: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, borderWidth: 1, borderColor: colors.border },
-  heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  muted: { color: colors.muted, fontSize: 12 },
-  heroValue: { color: colors.text, fontSize: 27, fontWeight: '800', marginTop: 5 },
-  positive: { color: colors.positive, fontSize: 12, fontWeight: '700', marginTop: 7, lineHeight: 18 },
-  live: { flexDirection: 'row', gap: 6, alignItems: 'center', backgroundColor: colors.accentSoft, paddingHorizontal: 9, paddingVertical: 6, borderRadius: radius.pill },
-  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.accent },
-  liveText: { color: colors.accent, fontSize: 10, fontWeight: '800' },
-  chart: { height: 62, marginTop: 18, overflow: 'hidden', justifyContent: 'center' },
-  chartLine: { height: 28, borderTopWidth: 2, borderColor: colors.accent, transform: [{ skewX: '-18deg' }], opacity: 0.9 },
-  statsRow: { flexDirection: 'row', gap: spacing.sm },
-  stat: { flex: 1, backgroundColor: colors.surface, padding: spacing.md, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border },
-  statValue: { color: colors.text, fontSize: 16, fontWeight: '800', marginTop: 7 },
-  statDetail: { color: colors.muted, fontSize: 11, marginTop: 3 },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 2 },
-  sectionTitle: { color: colors.text, fontSize: 19, fontWeight: '800' },
-  link: { color: colors.accent, fontSize: 12, fontWeight: '700' },
-  tradingGrid: { flexDirection: 'row', gap: spacing.sm },
-  tradingCard: { flex: 1, minHeight: 126, backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md, borderWidth: 1, borderColor: colors.border },
-  tradingIcon: { color: colors.accent, fontSize: 21, fontWeight: '900' },
-  tradingTitle: { color: colors.text, fontSize: 15, fontWeight: '900', marginTop: 14 },
-  tradingSubtitle: { color: colors.muted, fontSize: 10, lineHeight: 15, marginTop: 5 },
-  exploreGrid: { flexDirection: 'row', gap: spacing.sm },
-  exploreCard: { flex: 1, minHeight: 142, backgroundColor: colors.accentSoft, borderRadius: radius.md, padding: spacing.md, borderWidth: 1, borderColor: colors.border },
-  exploreIcon: { color: colors.accent, fontSize: 21, fontWeight: '900' },
-  exploreTitle: { color: colors.text, fontSize: 15, fontWeight: '900', marginTop: 17 },
-  exploreSubtitle: { color: colors.muted, fontSize: 10, lineHeight: 15, marginTop: 5 },
-  labGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  labCard: { width: '48%', minHeight: 128, backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md, borderWidth: 1, borderColor: colors.border },
-  labIcon: { color: colors.accent, fontSize: 21, fontWeight: '800' },
-  labTitle: { color: colors.text, fontSize: 15, fontWeight: '800', marginTop: 14 },
-  labSubtitle: { color: colors.muted, fontSize: 11, lineHeight: 16, marginTop: 5 },
-  marketCard: { backgroundColor: colors.surface, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md },
-  marketRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: spacing.md, borderBottomWidth: 1, borderColor: colors.border },
-  noBorder: { borderBottomWidth: 0 },
-  symbol: { color: colors.text, fontSize: 14, fontWeight: '800' },
-  marketRight: { alignItems: 'flex-end' },
-  price: { color: colors.text, fontSize: 13, fontWeight: '700' },
-  disclaimer: { padding: spacing.md, backgroundColor: colors.surfaceElevated, borderRadius: radius.md },
-  disclaimerText: { color: colors.muted, fontSize: 10, lineHeight: 15 },
-});
+const watchlist=[{symbol:'NIFTY 50',value:'Market data',change:'Provider pending'},{symbol:'SENSEX',value:'Market data',change:'Provider pending'},{symbol:'RELIANCE',value:'Market data',change:'Provider pending'}];
+function Stat({label,value,detail}:{label:string;value:string;detail:string}){return <View style={styles.stat}><Text style={styles.muted}>{label}</Text><Text style={styles.statValue}>{value}</Text><Text style={styles.statDetail}>{detail}</Text></View>}
+export default function HomeScreen(){return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}><View style={styles.header}><View><Text style={styles.eyebrow}>INVESTIQ</Text><Text style={styles.title}>Good evening.</Text></View><Link href="/profile" asChild><TouchableOpacity style={styles.avatar}><Text style={styles.avatarText}>IQ</Text></TouchableOpacity></Link></View>
+<View style={styles.hero}><View style={styles.heroTop}><View><Text style={styles.muted}>Portfolio value</Text><Text style={styles.heroValue}>Connect account</Text></View><View style={styles.live}><View style={styles.dot}/><Text style={styles.liveText}>READY</Text></View></View><Text style={styles.positive}>Your live portfolio layer will appear here after secure account integration.</Text><View style={styles.chart}><View style={styles.chartLine}/></View></View>
+<View style={styles.statsRow}><Stat label="Invested" value="—" detail="Not connected"/><Stat label="Returns" value="—" detail="Not connected"/><Stat label="XIRR" value="—" detail="Not connected"/></View>
+<View style={styles.sectionHeader}><Text style={styles.sectionTitle}>Account</Text><Link href="/profile" style={styles.link}>Profile & security</Link></View><View style={styles.accountCard}><Link href="/profile" asChild><TouchableOpacity style={styles.accountButton}><Text style={styles.accountIcon}>◉</Text><View style={styles.accountText}><Text style={styles.accountTitle}>Customer Profile & KYC</Text><Text style={styles.accountSubtitle}>Identity, KYC status, risk profile, MFA and secure account settings.</Text></View><Text style={styles.chevron}>›</Text></TouchableOpacity></Link></View>
+<View style={styles.sectionHeader}><Text style={styles.sectionTitle}>Trading</Text><Text style={styles.link}>Execution layer</Text></View><View style={styles.tradingGrid}><Link href="/portfolio" asChild><TouchableOpacity style={styles.tradingCard}><Text style={styles.tradingIcon}>◉</Text><Text style={styles.tradingTitle}>Portfolio</Text><Text style={styles.tradingSubtitle}>Live positions, balances and verified P&L.</Text></TouchableOpacity></Link><Link href="/trading" asChild><TouchableOpacity style={styles.tradingCard}><Text style={styles.tradingIcon}>⇄</Text><Text style={styles.tradingTitle}>Trading Terminal</Text><Text style={styles.tradingSubtitle}>Orders, validation and broker execution.</Text></TouchableOpacity></Link></View>
+<View style={styles.sectionHeader}><Text style={styles.sectionTitle}>Explore</Text><Text style={styles.link}>Intelligence</Text></View><View style={styles.exploreGrid}><Link href="/stocks" asChild><TouchableOpacity style={styles.exploreCard}><Text style={styles.exploreIcon}>↗</Text><Text style={styles.exploreTitle}>Stocks</Text><Text style={styles.exploreSubtitle}>History, risk, financials & scenarios.</Text></TouchableOpacity></Link><Link href="/funds" asChild><TouchableOpacity style={styles.exploreCard}><Text style={styles.exploreIcon}>◈</Text><Text style={styles.exploreTitle}>Mutual Funds</Text><Text style={styles.exploreSubtitle}>Fund X-Ray, returns & goal intelligence.</Text></TouchableOpacity></Link></View>
+<View style={styles.sectionHeader}><Text style={styles.sectionTitle}>Investment Lab</Text><Link href="/lab" style={styles.link}>Open Lab</Link></View><View style={styles.labGrid}>{[['₹','SIP','Model monthly investing with step-up scenarios.'],['◈','Lumpsum','Project one-time wealth across scenarios.'],['◎','Goal Planner','Work backwards from a target corpus.'],['△','Scenarios','Compare conservative, base and optimistic cases.']].map(([icon,title,subtitle])=><Link key={title} href="/lab" asChild><TouchableOpacity style={styles.labCard}><Text style={styles.labIcon}>{icon}</Text><Text style={styles.labTitle}>{title}</Text><Text style={styles.labSubtitle}>{subtitle}</Text></TouchableOpacity></Link>)}</View>
+<View style={styles.sectionHeader}><Text style={styles.sectionTitle}>Market pulse</Text><Text style={styles.link}>Verified feed</Text></View><View style={styles.marketCard}>{watchlist.map((item,index)=><View key={item.symbol} style={[styles.marketRow,index===watchlist.length-1&&styles.noBorder]}><View><Text style={styles.symbol}>{item.symbol}</Text><Text style={styles.muted}>Live provider integration</Text></View><View style={styles.marketRight}><Text style={styles.price}>{item.value}</Text><Text style={styles.muted}>{item.change}</Text></View></View>)}</View><View style={styles.disclaimer}><Text style={styles.disclaimerText}>No fabricated market prices are shown. Production market data will come only from verified providers. Projections are assumptions, not guarantees.</Text></View></ScrollView></SafeAreaView>}
+const styles=StyleSheet.create({safe:{flex:1,backgroundColor:colors.background},content:{padding:spacing.lg,paddingBottom:48,gap:spacing.lg},header:{flexDirection:'row',alignItems:'center',justifyContent:'space-between'},eyebrow:{color:colors.accent,fontSize:12,fontWeight:'800',letterSpacing:2},title:{color:colors.text,fontSize:30,fontWeight:'700',marginTop:4},avatar:{width:44,height:44,borderRadius:22,backgroundColor:colors.accentSoft,alignItems:'center',justifyContent:'center',borderWidth:1,borderColor:colors.border},avatarText:{color:colors.accent,fontWeight:'800'},hero:{backgroundColor:colors.surface,borderRadius:radius.lg,padding:spacing.lg,borderWidth:1,borderColor:colors.border},heroTop:{flexDirection:'row',justifyContent:'space-between',alignItems:'flex-start'},muted:{color:colors.muted,fontSize:12},heroValue:{color:colors.text,fontSize:27,fontWeight:'800',marginTop:5},positive:{color:colors.positive,fontSize:12,fontWeight:'700',marginTop:7,lineHeight:18},live:{flexDirection:'row',gap:6,alignItems:'center',backgroundColor:colors.accentSoft,paddingHorizontal:9,paddingVertical:6,borderRadius:radius.pill},dot:{width:6,height:6,borderRadius:3,backgroundColor:colors.accent},liveText:{color:colors.accent,fontSize:10,fontWeight:'800'},chart:{height:62,marginTop:18,overflow:'hidden',justifyContent:'center'},chartLine:{height:28,borderTopWidth:2,borderColor:colors.accent,transform:[{skewX:'-18deg'}],opacity:.9},statsRow:{flexDirection:'row',gap:spacing.sm},stat:{flex:1,backgroundColor:colors.surface,padding:spacing.md,borderRadius:radius.md,borderWidth:1,borderColor:colors.border},statValue:{color:colors.text,fontSize:16,fontWeight:'800',marginTop:7},statDetail:{color:colors.muted,fontSize:11,marginTop:3},sectionHeader:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginTop:2},sectionTitle:{color:colors.text,fontSize:19,fontWeight:'800'},link:{color:colors.accent,fontSize:12,fontWeight:'700'},accountCard:{backgroundColor:colors.surface,borderRadius:radius.md,borderWidth:1,borderColor:colors.border},accountButton:{padding:spacing.md,flexDirection:'row',alignItems:'center'},accountIcon:{color:colors.accent,fontSize:20},accountText:{flex:1,marginLeft:12},accountTitle:{color:colors.text,fontSize:14,fontWeight:'900'},accountSubtitle:{color:colors.muted,fontSize:10,lineHeight:15,marginTop:4},chevron:{color:colors.accent,fontSize:24},tradingGrid:{flexDirection:'row',gap:spacing.sm},tradingCard:{flex:1,minHeight:126,backgroundColor:colors.surface,borderRadius:radius.md,padding:spacing.md,borderWidth:1,borderColor:colors.border},tradingIcon:{color:colors.accent,fontSize:21,fontWeight:'900'},tradingTitle:{color:colors.text,fontSize:15,fontWeight:'900',marginTop:14},tradingSubtitle:{color:colors.muted,fontSize:10,lineHeight:15,marginTop:5},exploreGrid:{flexDirection:'row',gap:spacing.sm},exploreCard:{flex:1,minHeight:142,backgroundColor:colors.accentSoft,borderRadius:radius.md,padding:spacing.md,borderWidth:1,borderColor:colors.border},exploreIcon:{color:colors.accent,fontSize:21,fontWeight:'900'},exploreTitle:{color:colors.text,fontSize:15,fontWeight:'900',marginTop:17},exploreSubtitle:{color:colors.muted,fontSize:10,lineHeight:15,marginTop:5},labGrid:{flexDirection:'row',flexWrap:'wrap',gap:spacing.sm},labCard:{width:'48%',minHeight:128,backgroundColor:colors.surface,borderRadius:radius.md,padding:spacing.md,borderWidth:1,borderColor:colors.border},labIcon:{color:colors.accent,fontSize:21,fontWeight:'800'},labTitle:{color:colors.text,fontSize:15,fontWeight:'800',marginTop:14},labSubtitle:{color:colors.muted,fontSize:11,lineHeight:16,marginTop:5},marketCard:{backgroundColor:colors.surface,borderRadius:radius.md,borderWidth:1,borderColor:colors.border,paddingHorizontal:spacing.md},marketRow:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',paddingVertical:spacing.md,borderBottomWidth:1,borderColor:colors.border},noBorder:{borderBottomWidth:0},symbol:{color:colors.text,fontSize:14,fontWeight:'800'},marketRight:{alignItems:'flex-end'},price:{color:colors.text,fontSize:13,fontWeight:'700'},disclaimer:{padding:spacing.md,backgroundColor:colors.surfaceElevated,borderRadius:radius.md},disclaimerText:{color:colors.muted,fontSize:10,lineHeight:15}});
