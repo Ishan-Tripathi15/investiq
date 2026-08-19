@@ -40,18 +40,22 @@ import { SecurityActivityService } from './security-activity.service';
 import { SecurityNotificationsController } from './security-notifications.controller';
 import { SecurityNotificationsRepository } from './security-notifications.repository';
 import { SecurityNotificationsService } from './security-notifications.service';
+import { NotificationDeliveryController } from './notification-delivery.controller';
+import { NotificationDeliveryRepository } from './notification-delivery.repository';
+import { NotificationDeliveryService } from './notification-delivery.service';
 
 @Controller('health')
 class HealthController { @Get() health() { return { status: 'ok', service: 'investiq-api', version: 'v1' }; } }
 
 @Module({
   imports: [ThrottlerModule.forRoot({ throttlers: [{ name: 'default', ttl: 60_000, limit: 120 }] })],
-  controllers: [HealthController, AuthController, MfaController, ProfileController, SecurityActivityController, SecurityNotificationsController, MarketDataController, FundamentalsController, TradingController, TradingRiskController, BrokerConnectionController],
+  controllers: [HealthController, AuthController, MfaController, ProfileController, SecurityActivityController, SecurityNotificationsController, NotificationDeliveryController, MarketDataController, FundamentalsController, TradingController, TradingRiskController, BrokerConnectionController],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_INTERCEPTOR, useClass: HttpObservabilityInterceptor },
     AuthRepository, AuthService, AuthRiskService, AuthGuard, MfaRepository, MfaService, ProfileRepository, ProfileService,
     SecurityActivityRepository, SecurityActivityService, SecurityNotificationsRepository, SecurityNotificationsService,
+    NotificationDeliveryRepository, NotificationDeliveryService,
     MarketDataService, MarketDataRepository, MarketDataCache, MutualFundsService, FundamentalsService,
     HistoricalValuationService, TradingRepository, TradingRiskService, TradingService,
     TradingReconciliationService, TradingEventsService,
