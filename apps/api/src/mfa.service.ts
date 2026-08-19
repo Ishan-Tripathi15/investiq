@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
-import { createHmac, randomBytes, randomInt, randomUUID } from 'node:crypto';
+import { createHmac, randomBytes, randomUUID } from 'node:crypto';
 import { decryptField, encryptField, hashOpaque } from './security.crypto';
 import { MfaRepository } from './mfa.repository';
 
@@ -47,6 +47,11 @@ export class MfaService {
     const record = await this.repository.get(userId); if (!record?.enabledAt) return { enabled:false };
     if (!verifyTotp(decryptField(record.secretCiphertext), otp)) throw new UnauthorizedException('Invalid MFA code');
     await this.repository.disable(userId); return { enabled:false };
+  }
+  async verifyForTransaction(userId: string, otp: string): Promise<boolean> {
+    const record = await this.repository.get(userId);
+    if (!record?.enabledAt) return false;
+    return verifyTotp(decryptField(record.secretCiphertext), otp);
   }
   async challenge(userId: string): Promise<string> {
     const raw = `${randomUUID()}-${randomBytes(32).toString('base64url')}`; const hash = hashOpaque(raw);
