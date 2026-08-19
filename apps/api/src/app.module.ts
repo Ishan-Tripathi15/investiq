@@ -11,6 +11,8 @@ import { TradingController } from './trading.controller';
 import { TradingEventsService } from './trading-events.service';
 import { TradingReconciliationService } from './trading-reconciliation.service';
 import { TradingRepository } from './trading.repository';
+import { TradingRiskController } from './trading-risk.controller';
+import { TradingRiskService } from './trading-risk.service';
 import { TradingService } from './trading.service';
 
 @Controller('health')
@@ -22,10 +24,11 @@ class HealthController {
 }
 
 @Module({
-  controllers: [HealthController, MarketDataController, FundamentalsController, TradingController],
+  controllers: [HealthController, MarketDataController, FundamentalsController, TradingController, TradingRiskController],
   providers: [
     MarketDataService, MarketDataRepository, MarketDataCache, MutualFundsService, FundamentalsService,
-    HistoricalValuationService, TradingRepository, TradingService, TradingReconciliationService, TradingEventsService,
+    HistoricalValuationService, TradingRepository, TradingRiskService, TradingService,
+    TradingReconciliationService, TradingEventsService,
   ],
 })
 export class AppModule {}
