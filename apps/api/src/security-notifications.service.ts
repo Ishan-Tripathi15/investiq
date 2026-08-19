@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Observable, from, interval, of } from 'rxjs';
 import { catchError, map, startWith, switchMap } from 'rxjs/operators';
 import { SecurityNotificationsRepository, type SecurityNotification, type SecurityNotificationSeverity } from './security-notifications.repository';
+import { NotificationDeliveryService } from './notification-delivery.service';
 
 export interface SecurityNotificationInput {
   userId: string;
@@ -20,10 +21,18 @@ export interface SecurityNotificationSseMessage {
 
 @Injectable()
 export class SecurityNotificationsService {
-  constructor(private readonly repository: SecurityNotificationsRepository) {}
+  constructor(private readonly repository: SecurityNotificationsRepository, private readonly delivery: NotificationDeliveryService) {}
 
   async create(input: SecurityNotificationInput) {
-    return this.repository.create({ ...input, metadata: input.metadata ?? {} });
+    const notification = await this.repository.create({ ...input, metadata: input.metadata ?? {} });
+    if (notification) {
+      try {
+        await this.delivery.deliver(notification);
+      } catch {
+        // The security event remains persisted even when an external provider is unavailable.
+      }
+    }
+    return notification;
   }
 
   list(userId: string, afterId = 0, limit = 50) {
@@ -41,11 +50,7 @@ export class SecurityNotificationsService {
 
   stream(userId: string, afterId = 0): Observable<SecurityNotificationSseMessage> {
     let cursor = Number.isFinite(afterId) && afterId > 0 ? Math.floor(afterId) : 0;
-    const initial: SecurityNotificationSseMessage = {
-      type: 'security.connected',
-      data: { status: 'connected', afterId: cursor },
-    };
-
+    const initial: SecurityNotificationSseMessage = { type: 'security.connected', data: { status: 'connected', afterId: cursor } };
     return interval(1000).pipe(
       startWith(0),
       switchMap(() => from(this.repository.list(userId, cursor, 100)).pipe(catchError(() => of([] as SecurityNotification[])))),
