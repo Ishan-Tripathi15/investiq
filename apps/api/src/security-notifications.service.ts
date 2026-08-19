@@ -1,0 +1,60 @@
+import { Injectable } from '@nestjs/common';
+import { Observable, from, interval, of } from 'rxjs';
+import { catchError, map, startWith, switchMap } from 'rxjs/operators';
+import { SecurityNotificationsRepository, type SecurityNotification, type SecurityNotificationSeverity } from './security-notifications.repository';
+
+export interface SecurityNotificationInput {
+  userId: string;
+  severity: SecurityNotificationSeverity;
+  eventType: string;
+  title: string;
+  message: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface SecurityNotificationSseMessage {
+  type: 'security.connected' | 'security.notification';
+  id?: string;
+  data: SecurityNotification | { status: 'connected'; afterId: number };
+}
+
+@Injectable()
+export class SecurityNotificationsService {
+  constructor(private readonly repository: SecurityNotificationsRepository) {}
+
+  async create(input: SecurityNotificationInput) {
+    return this.repository.create({ ...input, metadata: input.metadata ?? {} });
+  }
+
+  list(userId: string, afterId = 0, limit = 50) {
+    return this.repository.list(userId, afterId, limit);
+  }
+
+  unreadCount(userId: string) {
+    return this.repository.unreadCount(userId);
+  }
+
+  async markRead(userId: string, notificationId: number) {
+    if (!Number.isInteger(notificationId) || notificationId <= 0) return false;
+    return this.repository.markRead(userId, notificationId);
+  }
+
+  stream(userId: string, afterId = 0): Observable<SecurityNotificationSseMessage> {
+    let cursor = Number.isFinite(afterId) && afterId > 0 ? Math.floor(afterId) : 0;
+    const initial: SecurityNotificationSseMessage = {
+      type: 'security.connected',
+      data: { status: 'connected', afterId: cursor },
+    };
+
+    return interval(1000).pipe(
+      startWith(0),
+      switchMap(() => from(this.repository.list(userId, cursor, 100)).pipe(catchError(() => of([] as SecurityNotification[])))),
+      map((notifications) => {
+        if (!notifications.length) return initial;
+        const notification = notifications[notifications.length - 1];
+        cursor = notification.id;
+        return { type: 'security.notification', data: notification, id: String(notification.id) } satisfies SecurityNotificationSseMessage;
+      }),
+    );
+  }
+}
