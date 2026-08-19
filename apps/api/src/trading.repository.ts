@@ -7,6 +7,7 @@ export interface ExecutionRequestRecord {
   idempotencyKey: string;
   orderId?: string;
   status: ExecutionRequestStatus;
+  request?: OrderRequest;
   response?: Order;
   errorMessage?: string;
 }
@@ -60,7 +61,7 @@ export class TradingRepository {
     if (result.rowCount === 1) return null;
 
     const existing = await this.pool.query(
-      `SELECT idempotency_key, order_id, status, response, error_message
+      `SELECT idempotency_key, order_id, status, request, response, error_message
        FROM trading_execution_requests WHERE idempotency_key = $1`,
       [idempotencyKey],
     );
@@ -70,9 +71,31 @@ export class TradingRepository {
       idempotencyKey: row.idempotency_key,
       orderId: row.order_id ?? undefined,
       status: row.status as ExecutionRequestStatus,
+      request: row.request as OrderRequest,
       response: row.response ? (row.response as Order) : undefined,
       errorMessage: row.error_message ?? undefined,
     };
+  }
+
+  async listExecutionRequests(limit = 100): Promise<ExecutionRequestRecord[]> {
+    if (!this.pool) return [];
+    await this.ensureSchema();
+    const safeLimit = Math.max(1, Math.min(500, Math.floor(limit)));
+    const result = await this.pool.query(
+      `SELECT idempotency_key, order_id, status, request, response, error_message
+       FROM trading_execution_requests
+       ORDER BY updated_at DESC
+       LIMIT $1`,
+      [safeLimit],
+    );
+    return result.rows.map((row) => ({
+      idempotencyKey: row.idempotency_key,
+      orderId: row.order_id ?? undefined,
+      status: row.status as ExecutionRequestStatus,
+      request: row.request as OrderRequest,
+      response: row.response ? (row.response as Order) : undefined,
+      errorMessage: row.error_message ?? undefined,
+    }));
   }
 
   async completeExecution(idempotencyKey: string, response: Order): Promise<void> {
