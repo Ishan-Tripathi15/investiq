@@ -1,6 +1,7 @@
 export interface HistoricalValuationInput {
   date: string;
   marketCap?: number;
+  enterpriseValue?: number;
   earnings?: number;
   bookValue?: number;
   revenue?: number;
@@ -50,7 +51,7 @@ export function buildHistoricalValuation(points: HistoricalValuationInput[]): Hi
       ...(positive(point.marketCap) && positive(point.earnings) ? { pe: point.marketCap / point.earnings } : {}),
       ...(positive(point.marketCap) && positive(point.bookValue) ? { pb: point.marketCap / point.bookValue } : {}),
       ...(positive(point.marketCap) && positive(point.revenue) ? { ps: point.marketCap / point.revenue } : {}),
-      ...(positive(point.marketCap) && positive(point.ebitda) ? { evToEbitda: point.marketCap / point.ebitda } : {}),
+      ...(positive(point.enterpriseValue) && positive(point.ebitda) ? { evToEbitda: point.enterpriseValue / point.ebitda } : {}),
     }));
 }
 
