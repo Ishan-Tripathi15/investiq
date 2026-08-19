@@ -24,6 +24,7 @@ export * from './investment-lab';
 export * from './mutual-fund-analytics';
 export * from './mutual-fund-risk';
 export * from './mutual-fund-simulator';
+export * from './mutual-fund-comparison';
 export * from './stock-intelligence';
 export * from './stock-technical';
 export * from './financial-intelligence';
