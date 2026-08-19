@@ -35,6 +35,8 @@ export class KycService {
   async status(userId: string, reference: string): Promise<KycStatusResult> {
     const normalized = reference.trim();
     if (!normalized || normalized.length > 256) throw new ServiceUnavailableException('Invalid KYC reference');
+    const profile = await this.profiles.get(userId);
+    if (!profile || profile.kycReference !== normalized) throw new ServiceUnavailableException('KYC reference does not belong to this account');
     const result = await this.provider.getStatus(normalized);
     if (result.available) {
       await this.profiles.setKyc(userId, result.status, result.provider, normalized, result.status === 'verified' ? new Date().toISOString() : undefined);
