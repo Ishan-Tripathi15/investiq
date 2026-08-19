@@ -11,6 +11,7 @@ export interface AuthUser {
   id: string;
   role: AuthRole;
   permissions: TradingPermission[];
+  sessionId?: string;
 }
 
 export interface AuthenticatedRequest {
