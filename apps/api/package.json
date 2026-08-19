@@ -8,7 +8,7 @@
     "start": "node dist/main.js",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "jest --runInBand"
+    "test": "vitest run"
   },
   "dependencies": {
     "@investiq/domain": "workspace:*",
@@ -28,6 +28,7 @@
     "@nestjs/testing": "^11.1.6",
     "@types/node": "^24.0.10",
     "@types/pg": "^8.15.5",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
   }
 }
