@@ -14,18 +14,18 @@ import { TradingRepository } from './trading.repository';
 import { TradingRiskController } from './trading-risk.controller';
 import { TradingRiskService } from './trading-risk.service';
 import { TradingService } from './trading.service';
+import { AuthController } from './auth.controller';
+import { AuthGuard } from './auth.guard';
+import { AuthRepository } from './auth.repository';
+import { AuthService } from './auth.service';
 
 @Controller('health')
-class HealthController {
-  @Get()
-  health() {
-    return { status: 'ok', service: 'investiq-api', version: 'v1' };
-  }
-}
+class HealthController { @Get() health() { return { status: 'ok', service: 'investiq-api', version: 'v1' }; } }
 
 @Module({
-  controllers: [HealthController, MarketDataController, FundamentalsController, TradingController, TradingRiskController],
+  controllers: [HealthController, AuthController, MarketDataController, FundamentalsController, TradingController, TradingRiskController],
   providers: [
+    AuthRepository, AuthService, AuthGuard,
     MarketDataService, MarketDataRepository, MarketDataCache, MutualFundsService, FundamentalsService,
     HistoricalValuationService, TradingRepository, TradingRiskService, TradingService,
     TradingReconciliationService, TradingEventsService,
