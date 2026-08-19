@@ -20,6 +20,7 @@ import { AuthController } from './auth.controller';
 import { AuthGuard } from './auth.guard';
 import { AuthRepository } from './auth.repository';
 import { AuthService } from './auth.service';
+import { AuthRiskService } from './auth-risk.service';
 import { MfaController } from './mfa.controller';
 import { MfaRepository } from './mfa.repository';
 import { MfaService } from './mfa.service';
@@ -46,7 +47,7 @@ class HealthController { @Get() health() { return { status: 'ok', service: 'inve
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_INTERCEPTOR, useClass: HttpObservabilityInterceptor },
-    AuthRepository, AuthService, AuthGuard, MfaRepository, MfaService, ProfileRepository, ProfileService,
+    AuthRepository, AuthService, AuthRiskService, AuthGuard, MfaRepository, MfaService, ProfileRepository, ProfileService,
     SecurityActivityRepository, SecurityActivityService,
     MarketDataService, MarketDataRepository, MarketDataCache, MutualFundsService, FundamentalsService,
     HistoricalValuationService, TradingRepository, TradingRiskService, TradingService,
