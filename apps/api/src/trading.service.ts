@@ -27,7 +27,7 @@ export class TradingService {
     const estimatedValue = (request.price ?? 0) * request.quantity;
     const health = await this.broker.health();
     const capabilities = await this.capabilityCheck(request);
-    const risk = health.configured && health.connected && capabilities.supported ? await this.risk.evaluate(request) : { decision: 'unavailable' as const, checks: [], message: !capabilities.supported ? 'Broker capability checks did not approve this order.' : health.message };
+    const risk = health.configured && health.connected && capabilities.supported ? await this.risk.evaluate(userId, request) : { decision: 'unavailable' as const, checks: [], message: !capabilities.supported ? 'Broker capability checks did not approve this order.' : health.message };
     void this.repository.audit(userId, 'order.previewed', { request, capabilities, risk });
     return { valid: true, request, estimatedValue: request.type === 'market' ? undefined : estimatedValue, execution: 'broker_required', capabilities, risk,
       message: !capabilities.supported ? 'Order is not compatible with the configured broker capabilities.' : risk.decision === 'rejected' ? 'Order failed the pre-trade risk checks.' : 'Order validated locally. Execution requires a configured broker.' };
@@ -58,7 +58,7 @@ export class TradingService {
       void this.repository.audit(userId, 'order.execution_failed', { request, capabilities }, orderId, key);
       throw new BadRequestException({ message: 'Broker capability validation failed', checks: capabilities.checks });
     }
-    const risk = await this.risk.evaluate(request);
+    const risk = await this.risk.evaluate(userId, request);
     if (risk.decision !== 'approved') {
       const reason = risk.message ?? 'Pre-trade risk checks did not approve this order';
       if (key) await this.repository.failExecution(key, reason);
