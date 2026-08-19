@@ -32,3 +32,4 @@ export * from './scenario-engine';
 export * from './valuation-intelligence';
 export * from './trading';
 export * from './trading-risk';
+export * from './trading-session';
