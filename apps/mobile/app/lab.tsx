@@ -1,11 +1,9 @@
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Link } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, radius, spacing } from '@/theme';
 
 type Mode = 'sip' | 'lumpsum' | 'goal';
-
 type Scenario = { label: string; rate: number; value: number; tone: 'low' | 'base' | 'high' };
 
 const money = (value: number) => `₹${Math.max(0, Math.round(value)).toLocaleString('en-IN')}`;
@@ -30,6 +28,23 @@ function sipValue(monthly: number, rate: number, years: number, stepUp: number) 
   return corpus;
 }
 
+function sipInvestedCapital(monthly: number, years: number, stepUp: number) {
+  const fullYears = Math.floor(years);
+  const remainingMonths = Math.round((years - fullYears) * 12);
+  let invested = 0;
+  let contribution = monthly;
+  for (let year = 0; year < fullYears; year += 1) {
+    invested += contribution * 12;
+    contribution *= 1 + stepUp / 100;
+  }
+  invested += contribution * remainingMonths;
+  return invested;
+}
+
+function requiredLumpsum(target: number, rate: number, years: number) {
+  return years > 0 ? target / Math.pow(1 + rate / 100, years) : target;
+}
+
 export default function InvestmentLab() {
   const [mode, setMode] = useState<Mode>('sip');
   const [amount, setAmount] = useState('10000');
@@ -47,16 +62,15 @@ export default function InvestmentLab() {
     return rates.map((rate, index) => ({
       label: index === 0 ? 'Conservative' : index === 1 ? 'Base case' : 'Optimistic',
       rate,
-      value: mode === 'sip' ? sipValue(inputAmount, rate, horizon, annualStepUp) : lumpsumValue(inputAmount, rate, horizon),
+      value: mode === 'goal'
+        ? requiredLumpsum(goal, rate, horizon)
+        : mode === 'sip' ? sipValue(inputAmount, rate, horizon, annualStepUp) : lumpsumValue(inputAmount, rate, horizon),
       tone: index === 0 ? 'low' : index === 1 ? 'base' : 'high',
     }));
-  }, [annualStepUp, horizon, inputAmount, mode]);
+  }, [annualStepUp, goal, horizon, inputAmount, mode]);
 
   const base = scenarios[1]?.value ?? 0;
-  const invested = mode === 'sip'
-    ? inputAmount * 12 * horizon * Math.pow(1 + annualStepUp / 100, Math.max(0, horizon - 1) / 2)
-    : inputAmount;
-  const requiredLumpsum = horizon > 0 ? goal / Math.pow(1.12, horizon) : goal;
+  const invested = mode === 'sip' ? sipInvestedCapital(inputAmount, horizon, annualStepUp) : inputAmount;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -70,7 +84,7 @@ export default function InvestmentLab() {
         <Text style={styles.subtitle}>Model wealth before you commit capital.</Text>
 
         <View style={styles.tabs}>
-          {([['sip', 'SIP'], ['lumpsum', 'Lumpsum'], ['goal', 'Goal']] as const).map(([key, label]) => (
+          {([['sip', 'SIP'], ['lumpsum', 'Lumpsum'], ['goal', 'Reverse Goal']] as const).map(([key, label]) => (
             <TouchableOpacity key={key} onPress={() => setMode(key)} style={[styles.tab, mode === key && styles.activeTab]}>
               <Text style={[styles.tabText, mode === key && styles.activeTabText]}>{label}</Text>
             </TouchableOpacity>
@@ -83,8 +97,8 @@ export default function InvestmentLab() {
               <Field label="Target corpus" value={target} onChangeText={setTarget} prefix="₹" />
               <Field label="Time horizon" value={years} onChangeText={setYears} suffix="years" />
               <View style={styles.goalBox}>
-                <Text style={styles.muted}>Required lumpsum at 12% assumed return</Text>
-                <Text style={styles.goalValue}>{money(requiredLumpsum)}</Text>
+                <Text style={styles.muted}>Required initial lumpsum under base-case 12% assumption</Text>
+                <Text style={styles.goalValue}>{money(base)}</Text>
               </View>
             </>
           ) : (
@@ -97,9 +111,9 @@ export default function InvestmentLab() {
         </View>
 
         <View style={styles.resultHero}>
-          <Text style={styles.muted}>Base-case projected value</Text>
-          <Text style={styles.resultValue}>{money(mode === 'goal' ? goal : base)}</Text>
-          {mode !== 'goal' && <Text style={styles.resultMeta}>12% annual assumption · {horizon} years</Text>}
+          <Text style={styles.muted}>{mode === 'goal' ? 'Required initial capital' : 'Base-case projected value'}</Text>
+          <Text style={styles.resultValue}>{money(base)}</Text>
+          <Text style={styles.resultMeta}>12% annual assumption · {horizon} years</Text>
         </View>
 
         {mode !== 'goal' && (
@@ -109,7 +123,7 @@ export default function InvestmentLab() {
           </View>
         )}
 
-        <Text style={styles.sectionTitle}>Scenario range</Text>
+        <Text style={styles.sectionTitle}>{mode === 'goal' ? 'Required capital by assumption' : 'Scenario range'}</Text>
         <View style={styles.scenarioCard}>
           {scenarios.map((scenario) => (
             <View key={scenario.label} style={styles.scenarioRow}>
@@ -121,7 +135,7 @@ export default function InvestmentLab() {
 
         <View style={styles.insight}>
           <Text style={styles.insightKicker}>ANALYSIS NOTE</Text>
-          <Text style={styles.insightText}>Scenarios are mathematical projections, not forecasts. Actual returns vary and can be negative. When connected to verified fund data, this module will separate historical performance from forward assumptions.</Text>
+          <Text style={styles.insightText}>Scenarios are mathematical projections, not forecasts. Actual returns vary and can be negative. SIP capital now reflects the exact annual step-up contribution schedule rather than an approximation. Historical fund performance will remain separate from these forward assumptions.</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
