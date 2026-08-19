@@ -5,6 +5,7 @@ import { issueToken, verifyToken } from './auth.jwt';
 import { AuthRepository, type AuthSession } from './auth.repository';
 import { MfaService } from './mfa.service';
 import { SecurityActivityService } from './security-activity.service';
+import { AuthRiskService } from './auth-risk.service';
 
 interface ConfigUser { id: string; username: string; passwordHash: string; role: AuthRole; permissions: TradingPermission[]; }
 export interface LoginSessionMetadata { deviceId?: string; deviceLabel?: string; ipAddress?: string; userAgent?: string; }
@@ -24,6 +25,7 @@ export class AuthService {
     private readonly sessions: AuthRepository,
     private readonly mfa: MfaService,
     private readonly security: SecurityActivityService,
+    private readonly authRisk: AuthRiskService,
   ) {}
   private users(): ConfigUser[] {
     const raw=process.env.AUTH_USERS_JSON?.trim(); if(!raw) throw new ServiceUnavailableException('Authentication users are not configured');
@@ -51,13 +53,23 @@ export class AuthService {
       if (user) await this.security.record(user.id, 'auth.login_failed', { reason: 'invalid_credentials' });
       throw new UnauthorizedException('Invalid credentials');
     }
+    const normalized = this.normalizeMetadata(metadata);
+    const risk = await this.authRisk.assessLogin({ userId: user.id, deviceId: normalized.deviceId, ipAddress: normalized.ipAddress });
+    if (risk.decision === 'block') {
+      await this.security.record(user.id, 'auth.login_blocked', { risk_score: risk.score, reasons: risk.reasons });
+      throw new UnauthorizedException('Additional verification is required before this login can continue');
+    }
     const mfaStatus=await this.mfa.status(user.id);
-    if(mfaStatus.enabled) {
-      await this.security.record(user.id, 'auth.mfa_challenge_issued', {});
+    if(mfaStatus.enabled || risk.decision === 'step_up') {
+      if (!mfaStatus.enabled && risk.reasons.some((reason) => reason === 'new_device' || reason === 'new_network')) {
+        await this.security.record(user.id, 'auth.mfa_required_for_risk', { risk_score: risk.score, reasons: risk.reasons });
+        throw new UnauthorizedException('MFA is required for sign-in from a new device or network');
+      }
+      await this.security.record(user.id, 'auth.mfa_challenge_issued', { risk_score: risk.score, reasons: risk.reasons });
       return {mfa_required:true,challenge_token:await this.mfa.challenge(user.id),expires_in:300};
     }
-    await this.security.record(user.id, 'auth.login_succeeded', { mfa: false });
-    return this.issueSession(user, metadata);
+    await this.security.record(user.id, 'auth.login_succeeded', { mfa: false, risk_score: risk.score });
+    return this.issueSession(user, normalized);
   }
   async verifyMfa(challenge:string,otp:string,metadata: LoginSessionMetadata = {}){
     const userId=await this.mfa.verifyChallenge(challenge,otp); const user=this.users().find(x=>x.id===userId); if(!user) throw new UnauthorizedException('User is no longer active');
