@@ -72,6 +72,7 @@ export class TwelveDataFundamentalsProvider implements FundamentalsProvider {
       const liabilities = row.liabilities as Json | undefined; const assets = row.assets as Json | undefined;
       period.totalDebt = first(nested(row, 'total_debt'), nested(row, 'liabilities', 'total_debt'), nested(liabilities, 'non_current_liabilities', 'long_term_debt_and_capital_lease_obligation', 'total_long_term_debt_and_capital_lease_obligation'));
       period.totalCash = first(nested(row, 'total_cash'), nested(assets, 'current_assets', 'cash_and_cash_equivalents'));
+      period.bookValue = first(nested(row, 'total_stockholders_equity'), nested(row, 'total_shareholders_equity'), nested(row, 'stockholders_equity'), nested(row, 'shareholders_equity'), nested(row, 'total_equity'), nested(liabilities, 'total_stockholders_equity'), nested(assets, 'total_stockholders_equity'));
     }
     for (const row of cashRows) {
       const date = String(row.fiscal_date ?? ''); const period = byDate.get(date); if (!period) continue;
