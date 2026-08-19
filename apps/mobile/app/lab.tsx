@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Link } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { calculateLumpsumPlan, calculateReverseLumpsumPlan, calculateSipPlan, type LabScenario, type LabScenarioResult } from '@investiq/domain';
 import { colors, radius, spacing } from '@/theme';
 
