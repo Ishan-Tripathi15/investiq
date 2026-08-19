@@ -1,13 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { decryptField, encryptField } from './security.crypto';
 import { ProfileRepository } from './profile.repository';
+import { KycService } from './kyc.service';
 
 const FIELDS = ['full_name','date_of_birth','email','phone','pan','address','city','state','postal_code','country','occupation','nominee'] as const;
 type ProfileField = typeof FIELDS[number];
 
 @Injectable()
 export class ProfileService {
-  constructor(private readonly repository: ProfileRepository) {}
+  constructor(private readonly repository: ProfileRepository, private readonly kyc: KycService) {}
   async get(userId:string){
     const profile=await this.repository.get(userId); if(!profile) return {user_id:userId,kyc_status:'not_started'};
     const result:Record<string,unknown>={user_id:userId,kyc_status:profile.kycStatus,risk_profile:profile.riskProfile,kyc_provider:profile.kycProvider,kyc_reference:profile.kycReference,kyc_verified_at:profile.kycVerifiedAt};
@@ -21,6 +22,8 @@ export class ProfileService {
     const risk=body.risk_profile; if(risk!==undefined && !['conservative','moderate','aggressive'].includes(String(risk))) throw new Error('Invalid risk profile');
     await this.repository.upsert(userId,encrypted,risk===undefined?undefined:String(risk)); return this.get(userId);
   }
-  async startKyc(userId:string){await this.repository.startKyc(userId);return this.get(userId);}
+  async startKyc(userId:string){return this.kyc.start(userId);}
+  async kycStatus(userId:string, reference:string){return this.kyc.status(userId, reference);}
+  async kycHealth(){return this.kyc.health();}
   private maskPan(pan:string){const normalized=pan.replace(/\s+/g,'');return normalized.length<=4?'****':`${'*'.repeat(Math.max(0,normalized.length-4))}${normalized.slice(-4)}`;}
 }
