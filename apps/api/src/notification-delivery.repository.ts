@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { Pool } from 'pg';
+import { decryptField, encryptField } from './security.crypto';
 
 export type NotificationChannel = 'push' | 'email' | 'sms';
 export type NotificationDeliveryStatus = 'queued' | 'sent' | 'failed' | 'unavailable';
@@ -37,11 +38,12 @@ export class NotificationDeliveryRepository {
   async registerDevice(input: Omit<NotificationDevice, 'enabled'>): Promise<void> {
     if (!this.pool) throw new Error('DATABASE_URL is required for notification devices');
     const tokenHash = createHash('sha256').update(input.pushToken).digest('hex');
+    const encryptedToken = encryptField(input.pushToken);
     await this.pool.query(
       `INSERT INTO notification_devices(id,user_id,platform,provider,push_token,token_hash,enabled)
        VALUES($1,$2,$3,$4,$5,$6,TRUE)
        ON CONFLICT(token_hash) DO UPDATE SET user_id=EXCLUDED.user_id,platform=EXCLUDED.platform,provider=EXCLUDED.provider,push_token=EXCLUDED.push_token,enabled=TRUE,updated_at=NOW()`,
-      [input.id, input.userId, input.platform, input.provider, input.pushToken, tokenHash],
+      [input.id, input.userId, input.platform, input.provider, encryptedToken, tokenHash],
     );
   }
 
@@ -51,10 +53,13 @@ export class NotificationDeliveryRepository {
       `SELECT id,user_id,platform,provider,push_token,enabled FROM notification_devices WHERE user_id=$1 AND enabled=TRUE ORDER BY updated_at DESC`,
       [userId],
     );
-    return result.rows.map((row) => ({
-      id: String(row.id), userId: String(row.user_id), platform: row.platform, provider: row.provider,
-      pushToken: String(row.push_token), enabled: Boolean(row.enabled),
-    }));
+    return result.rows.flatMap((row) => {
+      try {
+        return [{ id: String(row.id), userId: String(row.user_id), platform: row.platform, provider: row.provider, pushToken: decryptField(String(row.push_token)), enabled: Boolean(row.enabled) }];
+      } catch {
+        return [];
+      }
+    });
   }
 
   async disableDevice(userId: string, deviceId: string): Promise<boolean> {
