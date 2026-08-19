@@ -1,6 +1,6 @@
 import { Pool } from 'pg';
 import type { Order, OrderRequest } from '@investiq/domain';
-import type { TradingEvent } from './trading-events.types';
+import type { TradingEvent, TradingEventType } from './trading-events.types';
 
 export type ExecutionRequestStatus = 'processing' | 'completed' | 'failed';
 
@@ -114,7 +114,7 @@ export class TradingRepository {
     );
     return result.rows.map((row) => ({
       id: Number(row.id),
-      type: row.event_type,
+      type: row.event_type as TradingEventType,
       orderId: row.order_id ?? undefined,
       idempotencyKey: row.idempotency_key ?? undefined,
       payload: (row.payload ?? {}) as Record<string, unknown>,
