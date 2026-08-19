@@ -1,5 +1,6 @@
 import { Pool } from 'pg';
 import type { Order, OrderRequest } from '@investiq/domain';
+import type { TradingEvent } from './trading-events.types';
 
 export type ExecutionRequestStatus = 'processing' | 'completed' | 'failed';
 
@@ -95,6 +96,29 @@ export class TradingRepository {
       request: row.request as OrderRequest,
       response: row.response ? (row.response as Order) : undefined,
       errorMessage: row.error_message ?? undefined,
+    }));
+  }
+
+  async listAuditEvents(afterId = 0, limit = 100): Promise<TradingEvent[]> {
+    if (!this.pool) return [];
+    await this.ensureSchema();
+    const safeAfterId = Number.isFinite(afterId) && afterId > 0 ? Math.floor(afterId) : 0;
+    const safeLimit = Math.max(1, Math.min(500, Math.floor(limit)));
+    const result = await this.pool.query(
+      `SELECT id, event_type, order_id, idempotency_key, payload, created_at
+       FROM trading_audit_events
+       WHERE id > $1
+       ORDER BY id ASC
+       LIMIT $2`,
+      [safeAfterId, safeLimit],
+    );
+    return result.rows.map((row) => ({
+      id: Number(row.id),
+      type: row.event_type,
+      orderId: row.order_id ?? undefined,
+      idempotencyKey: row.idempotency_key ?? undefined,
+      payload: (row.payload ?? {}) as Record<string, unknown>,
+      createdAt: new Date(row.created_at).toISOString(),
     }));
   }
 
