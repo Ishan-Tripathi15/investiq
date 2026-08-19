@@ -5,6 +5,7 @@ import { createBrokerAdapter } from './trading.provider';
 import { TradingRepository } from './trading.repository';
 import { TradingRiskService } from './trading-risk.service';
 import { BrokerConnectionRepository } from './broker-connection.repository';
+import { TransactionAuthorizationService } from './transaction-authorization.service';
 import type { BrokerAdapter } from './trading.types';
 
 @Injectable()
@@ -14,6 +15,7 @@ export class TradingService {
     private readonly repository: TradingRepository,
     private readonly risk: TradingRiskService,
     private readonly connections: BrokerConnectionRepository,
+    private readonly transactionAuthorization: TransactionAuthorizationService,
   ) {
     this.broker = createBrokerAdapter(connections);
   }
@@ -36,11 +38,11 @@ export class TradingService {
     const capabilities = await this.capabilityCheck(request);
     const risk = health.configured && health.connected && capabilities.supported ? await this.risk.evaluate(userId, request) : { decision: 'unavailable' as const, checks: [], message: !capabilities.supported ? 'Broker capability checks did not approve this order.' : health.message };
     void this.repository.audit(userId, 'order.previewed', { request, capabilities, risk });
-    return { valid: true, request, estimatedValue: request.type === 'market' ? undefined : estimatedValue, execution: 'broker_required', capabilities, risk,
-      message: !capabilities.supported ? 'Order is not compatible with the configured broker capabilities.' : risk.decision === 'rejected' ? 'Order failed the pre-trade risk checks.' : 'Order validated locally. Execution requires a configured broker.' };
+    return { valid: true, request, estimatedValue: request.type === 'market' ? undefined : estimatedValue, execution: 'broker_required', transaction_authorization: 'required', capabilities, risk,
+      message: !capabilities.supported ? 'Order is not compatible with the configured broker capabilities.' : risk.decision === 'rejected' ? 'Order failed the pre-trade risk checks.' : 'Order validated locally. A one-time MFA transaction authorization is required before live execution.' };
   }
 
-  async placeOrder(userId: string, request: OrderRequest, idempotencyKey?: string) {
+  async placeOrder(userId: string, request: OrderRequest, idempotencyKey?: string, transactionAuthorization?: string) {
     const errors = validateOrder(request); if (errors.length) throw new BadRequestException({ message: 'Invalid order', errors });
     const key = idempotencyKey?.trim(); const orderId = randomUUID();
     if (key) {
@@ -72,6 +74,8 @@ export class TradingService {
       void this.repository.audit(userId, 'order.risk_rejected', { request, risk }, orderId, key);
       throw new BadRequestException({ message: reason, risk });
     }
+    await this.transactionAuthorization.consume(userId, transactionAuthorization, request);
+    void this.repository.audit(userId, 'order.transaction_authorized', { authorization: 'one_time_mfa', request }, orderId, key);
     void this.repository.audit(userId, 'order.risk_approved', { request, risk }, orderId, key);
     try {
       const order = await this.broker.placeOrder(userId, request);
