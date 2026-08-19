@@ -23,7 +23,7 @@ export interface TradingAccount {
 
 export interface BrokerAdapter {
   readonly name: string;
-  health(): Promise<BrokerHealth>;
+  health(userId?: string): Promise<BrokerHealth>;
   capabilities(): Promise<BrokerCapabilities | null>;
   quote(symbol: string): Promise<BrokerQuote | null>;
   placeOrder(userId: string, request: OrderRequest): Promise<Order>;
