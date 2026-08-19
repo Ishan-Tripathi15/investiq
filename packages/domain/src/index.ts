@@ -20,6 +20,7 @@ export function requiredLumpsum(target: number, annualReturnPct: number, years: 
 export function projectLumpsum(principal: number, years: number, assumptions: Record<ProjectionScenario, number>): Projection[] {
   return (Object.entries(assumptions) as [ProjectionScenario, number][]).map(([scenario, annualReturn]) => ({ scenario, annualReturn, futureValue: lumpsumFutureValue(principal, annualReturn, years) }));
 }
+export * from './investment-lab';
 export * from './mutual-fund-analytics';
 export * from './stock-intelligence';
 export * from './stock-technical';
