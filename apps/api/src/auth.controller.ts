@@ -29,7 +29,7 @@ export class AuthController{
  @UseGuards(AuthGuard, PermissionGuard('account:read'))
  @Get('sessions') sessions(@Req() req:AuthenticatedRequest){return this.auth.listSessions(req.user!.id);}
  @UseGuards(AuthGuard, PermissionGuard('account:read'))
- @Post('sessions/:id/revoke') revokeSession(@Req() req:AuthenticatedRequest,@Param('id') id:string){return this.auth.revokeSession(req.user!.id,id);}
- @UseGuards(AuthGuard, PermissionGuard('account:read'))
  @Post('sessions/revoke-others') revokeOthers(@Req() req:AuthenticatedRequest){return this.auth.revokeOtherSessions(req.user!.id,req.user!.sessionId);}
+ @UseGuards(AuthGuard, PermissionGuard('account:read'))
+ @Post('sessions/:id/revoke') revokeSession(@Req() req:AuthenticatedRequest,@Param('id') id:string){return this.auth.revokeSession(req.user!.id,id);}
 }
