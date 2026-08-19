@@ -1,5 +1,5 @@
-import { Controller, Get, Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { Controller, Get, MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { MarketDataCache } from './market-data.cache';
 import { MarketDataController } from './market-data.controller';
@@ -20,6 +20,8 @@ import { AuthController } from './auth.controller';
 import { AuthGuard } from './auth.guard';
 import { AuthRepository } from './auth.repository';
 import { AuthService } from './auth.service';
+import { requestContextMiddleware } from './request-context.middleware';
+import { HttpObservabilityInterceptor } from './http-observability.interceptor';
 
 @Controller('health')
 class HealthController { @Get() health() { return { status: 'ok', service: 'investiq-api', version: 'v1' }; } }
@@ -29,10 +31,15 @@ class HealthController { @Get() health() { return { status: 'ok', service: 'inve
   controllers: [HealthController, AuthController, MarketDataController, FundamentalsController, TradingController, TradingRiskController],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_INTERCEPTOR, useClass: HttpObservabilityInterceptor },
     AuthRepository, AuthService, AuthGuard,
     MarketDataService, MarketDataRepository, MarketDataCache, MutualFundsService, FundamentalsService,
     HistoricalValuationService, TradingRepository, TradingRiskService, TradingService,
     TradingReconciliationService, TradingEventsService,
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(requestContextMiddleware).forRoutes('*');
+  }
+}
