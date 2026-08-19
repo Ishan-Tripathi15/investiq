@@ -1,5 +1,5 @@
 import { Injectable, ServiceUnavailableException } from '@nestjs/common';
-import type { BrokerCapabilities, Order, OrderRequest, PositionPnl, calculatePositionPnl } from '@investiq/domain';
+import type { BrokerCapabilities, Order, OrderRequest, PositionPnl } from '@investiq/domain';
 import { calculatePositionPnl as buildPositionPnl } from '@investiq/domain';
 import type { BrokerAdapter, BrokerHealth, BrokerQuote, TradingAccount } from './trading.types';
 import { resolveBrokerConfiguration } from './broker-config';
@@ -148,7 +148,7 @@ export class KiteBrokerAdapter implements BrokerAdapter {
   }
 
   async placeOrder(userId: string, request: OrderRequest): Promise<Order> {
-    if (request.symbol.trim().toUpperCase() !== request.symbol.trim()) request = { ...request, symbol: request.symbol.trim().toUpperCase() };
+    request = { ...request, symbol: request.symbol.trim().toUpperCase() };
     const orderType = request.type === 'stop_loss' ? 'SL-M' : request.type === 'stop_limit' ? 'SL' : request.type === 'limit' ? 'LIMIT' : 'MARKET';
     const body = new URLSearchParams({
       tradingsymbol: request.symbol,
@@ -175,9 +175,8 @@ export class KiteBrokerAdapter implements BrokerAdapter {
   async cancelOrder(userId: string, orderId: string): Promise<Order> {
     const data = await this.request<{ order_id?: string }>(userId, `/orders/regular/${encodeURIComponent(orderId)}`, { method: 'DELETE' });
     const existing = await this.getOrder(userId, data.order_id ?? orderId);
-    if (existing) return existing;
-    const now = new Date().toISOString();
-    return { id: orderId, symbol: '', side: 'buy', type: 'market', quantity: 0, status: 'cancelled', filledQuantity: 0, createdAt: now, updatedAt: now };
+    if (!existing) throw new ServiceUnavailableException('Zerodha cancelled the order but no order snapshot was returned');
+    return existing;
   }
 
   async getOrder(userId: string, orderId: string): Promise<Order | null> {
@@ -202,8 +201,8 @@ export class KiteBrokerAdapter implements BrokerAdapter {
   }
 
   async getAccount(userId: string): Promise<TradingAccount> {
-    const data = await this.request<{ equity?: KiteMargins }>(userId, '/user/margins/equity');
-    return { currency: 'INR', availableCash: data?.equity?.available?.live_balance ?? data?.equity?.available?.cash, totalEquity: data?.equity?.net };
+    const data = await this.request<KiteMargins>(userId, '/user/margins/equity');
+    return { currency: 'INR', availableCash: data?.available?.live_balance ?? data?.available?.cash, totalEquity: data?.net };
   }
 }
 
