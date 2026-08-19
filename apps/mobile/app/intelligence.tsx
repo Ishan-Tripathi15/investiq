@@ -3,7 +3,7 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOp
 import { Link } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, radius, spacing } from '@/theme';
-import { buildScenarioEngine, calculateFinancialQuality, calculateStockStats, financialTrends, valuationFlags, valuationRegimes, type FinancialPeriodInput, type HistoricalValuationPoint, type PricePoint } from '@investiq/domain';
+import { buildScenarioEngine, calculateFinancialQuality, calculateStockStats, financialTrends, valuationFlags, valuationRegimes, type FinancialPeriodInput, type HistoricalValuationPoint, type PricePoint, type ScenarioEngineInput } from '@investiq/domain';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000/api/v1';
 type Source = { provider: string; retrievedAt: string } | null;
@@ -32,9 +32,24 @@ export default function Intelligence() {
   const stats = useMemo(() => points.length > 1 ? calculateStockStats(points) : null, [points]);
   const quality = useMemo(() => fundamentals?.periods?.length ? calculateFinancialQuality(fundamentals.periods) : null, [fundamentals]);
   const trends = useMemo(() => fundamentals?.periods?.length ? financialTrends(fundamentals.periods) : [], [fundamentals]);
-  const flags = useMemo(() => valuationFlags({ pe: fundamentals?.pe, forwardPe: fundamentals?.forwardPe, priceToBook: fundamentals?.priceToBook, evToEbitda: fundamentals?.evToEbitda }), [fundamentals]);
+  const valuationInput = useMemo(() => ({
+    ...(fundamentals?.pe !== undefined ? { pe: fundamentals.pe } : {}),
+    ...(fundamentals?.forwardPe !== undefined ? { forwardPe: fundamentals.forwardPe } : {}),
+    ...(fundamentals?.priceToBook !== undefined ? { priceToBook: fundamentals.priceToBook } : {}),
+    ...(fundamentals?.evToEbitda !== undefined ? { evToEbitda: fundamentals.evToEbitda } : {}),
+  }), [fundamentals]);
+  const flags = useMemo(() => valuationFlags(valuationInput), [valuationInput]);
   const regimes = useMemo(() => valuationHistory.length ? valuationRegimes(valuationHistory) : [], [valuationHistory]);
-  const scenarios = useMemo(() => buildScenarioEngine({ currentValue: Number(investment) || 0, years: Math.max(0, Number(years) || 0), stock: stats ?? undefined, financialPeriods: fundamentals?.periods, pe: fundamentals?.pe, forwardPe: fundamentals?.forwardPe, priceToBook: fundamentals?.priceToBook }), [investment, years, stats, fundamentals]);
+  const scenarioInput = useMemo((): ScenarioEngineInput => {
+    const input: ScenarioEngineInput = { currentValue: Number(investment) || 0, years: Math.max(0, Number(years) || 0) };
+    if (stats) input.stock = stats;
+    if (fundamentals?.periods) input.financialPeriods = fundamentals.periods;
+    if (fundamentals?.pe !== undefined) input.pe = fundamentals.pe;
+    if (fundamentals?.forwardPe !== undefined) input.forwardPe = fundamentals.forwardPe;
+    if (fundamentals?.priceToBook !== undefined) input.priceToBook = fundamentals.priceToBook;
+    return input;
+  }, [investment, years, stats, fundamentals]);
+  const scenarios = useMemo(() => buildScenarioEngine(scenarioInput), [scenarioInput]);
 
   async function analyze() {
     const ticker = symbol.trim().toUpperCase();
@@ -67,21 +82,13 @@ export default function Intelligence() {
     <View style={styles.top}><Link href="/stocks" style={styles.back}>‹ Stocks</Link><Text style={styles.eyebrow}>INVESTIQ INTELLIGENCE</Text></View>
     <Text style={styles.title}>Investment Intelligence</Text>
     <Text style={styles.subtitle}>One research view combining verified price history, financial quality, valuation history and transparent scenarios.</Text>
-
     <View style={styles.card}><Text style={styles.label}>RESEARCH INPUT</Text><TextInput value={symbol} autoCapitalize="characters" onChangeText={setSymbol} placeholder="Stock symbol" placeholderTextColor={colors.muted} style={styles.input}/><View style={styles.inputRow}><TextInput value={investment} onChangeText={setInvestment} keyboardType="numeric" placeholder="Investment" placeholderTextColor={colors.muted} style={styles.input}/><TextInput value={years} onChangeText={setYears} keyboardType="numeric" placeholder="Years" placeholderTextColor={colors.muted} style={[styles.input, styles.smallInput]}/></View><TouchableOpacity onPress={analyze} style={styles.button} disabled={loading}>{loading ? <ActivityIndicator color={colors.background}/> : <Text style={styles.buttonText}>Build research view</Text>}</TouchableOpacity><Text style={styles.muted}>{message}</Text>{source && <Text style={styles.source}>{source}</Text>}{financialMessage && <Text style={styles.warning}>{financialMessage}</Text>}{valuationMessage && <Text style={styles.warning}>{valuationMessage}</Text>}</View>
-
     <Text style={styles.section}>Market profile</Text><View style={styles.grid}><Metric label="5Y CAGR" value={stats ? pct(stats.cagrPct) : '—'} meta="Historical observation"/><Metric label="Total return" value={stats ? pct(stats.absoluteReturnPct) : '—'} meta="5Y start to end"/><Metric label="Max drawdown" value={stats ? pct(stats.maxDrawdownPct) : '—'} meta="Historical peak to trough"/><Metric label="Volatility" value={stats ? pct(stats.annualizedVolatilityPct) : '—'} meta="Annualized daily-return volatility"/></View>
-
     <Text style={styles.section}>Financial quality</Text><View style={styles.card}>{quality ? <><View style={styles.scoreRow}><View><Text style={styles.muted}>QUALITY SCORE</Text><Text style={styles.score}>{quality.score}<Text style={styles.scoreSmall}>/100</Text></Text></View><Text style={styles.badge}>{quality.label.toUpperCase()}</Text></View><View style={styles.componentGrid}>{Object.entries(quality.components).map(([key, value]) => <View key={key} style={styles.component}><Text style={styles.muted}>{key}</Text><Text style={styles.componentValue}>{value}</Text></View>)}</View><Text style={styles.label}>EVIDENCE</Text>{quality.evidence.map(item => <Text key={item} style={styles.evidence}>• {item}</Text>)}</> : <Text style={styles.muted}>Verified financial periods are unavailable, so no quality score is manufactured.</Text>}</View>
-
     <Text style={styles.section}>Financial growth</Text><View style={styles.card}>{trends.length ? trends.map(item => <View key={item.metric} style={styles.trendRow}><View style={styles.trendLeft}><Text style={styles.trendName}>{item.metric}</Text><Text style={styles.muted}>{item.first != null && item.latest != null ? `${item.first.toLocaleString('en-IN', { maximumFractionDigits: 0 })} → ${item.latest.toLocaleString('en-IN', { maximumFractionDigits: 0 })}` : 'Insufficient verified observations'}</Text></View><View style={styles.trendRight}><Text style={styles.trendDirection}>{item.direction.toUpperCase()}</Text><Text style={styles.trendCagr}>{item.cagrPct != null ? pct(item.cagrPct) : '—'}</Text></View></View>) : <Text style={styles.muted}>No verified multi-period financial history is available.</Text>}</View>
-
     <Text style={styles.section}>Valuation snapshot</Text><View style={styles.grid}><Metric label="P/E" value={fundamentals?.pe != null ? fundamentals.pe.toFixed(2) : '—'} meta="Provider-reported"/><Metric label="Forward P/E" value={fundamentals?.forwardPe != null ? fundamentals.forwardPe.toFixed(2) : '—'} meta="Provider-reported"/><Metric label="P/B" value={fundamentals?.priceToBook != null ? fundamentals.priceToBook.toFixed(2) : '—'} meta="Provider-reported"/><Metric label="EV / EBITDA" value={fundamentals?.evToEbitda != null ? fundamentals.evToEbitda.toFixed(2) : '—'} meta="Provider-reported"/></View><View style={styles.card}>{flags.length ? <>{flags.map(flag => <Text key={flag} style={styles.warning}>• {flag}</Text>)}<Text style={styles.muted}>These are simple valuation flags, not buy/sell signals.</Text></> : <Text style={styles.muted}>No threshold-based valuation flags were triggered, or valuation inputs are unavailable.</Text>}</View>
-
     <Text style={styles.section}>Historical valuation regime</Text><View style={styles.card}>{regimes.length ? regimes.map(regime => <View key={regime.metric} style={styles.regimeRow}><View style={styles.trendLeft}><Text style={styles.trendName}>{regime.metric === 'evToEbitda' ? 'EV / EBITDA' : regime.metric.toUpperCase()}</Text><Text style={styles.muted}>{regime.observations} verified annual observations · relative to available history</Text></View><View style={styles.trendRight}><Text style={styles.regimeStatus}>{regime.status.toUpperCase()}</Text><Text style={styles.trendCagr}>{ratio(regime.current)} · p{regime.percentile?.toFixed(0) ?? '—'}</Text></View></View>) : <Text style={styles.muted}>Historical valuation regimes are unavailable. This can occur when the provider plan does not expose historical market-cap data or matching financial inputs.</Text>}<Text style={styles.muted}>“Cheap” and “expensive” here are relative historical labels, not investment recommendations.</Text></View>
-
     <Text style={styles.section}>Scenario range</Text><View style={styles.card}><Text style={styles.muted}>These are assumption-driven projections. They are not forecasts, recommendations or guarantees.</Text>{scenarios.scenarios.map(item => <View key={item.name} style={styles.scenario}><View style={styles.scenarioLeft}><Text style={styles.scenarioName}>{item.name.toUpperCase()}</Text><Text style={styles.muted}>{item.annualReturnPct.toFixed(2)}% annual assumption · {item.confidence} confidence</Text></View><Text style={styles.scenarioValue}>{money(item.projectedValue, fundamentals?.currency ?? 'INR')}</Text></View>)}{scenarios.warnings.map(warning => <Text key={warning} style={styles.warning}>• {warning}</Text>)}</View>
-
     <View style={styles.note}><Text style={styles.noteTitle}>Research integrity</Text><Text style={styles.noteText}>InvestIQ keeps verified observations separate from assumptions. Missing provider data remains unavailable. Historical valuation labels describe the supplied history only; they do not predict future returns.</Text></View>
   </ScrollView></SafeAreaView>;
 }
