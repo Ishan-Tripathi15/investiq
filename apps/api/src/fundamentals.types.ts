@@ -10,6 +10,7 @@ export interface FinancialPeriod {
   freeCashFlow?: number;
   totalDebt?: number;
   totalCash?: number;
+  bookValue?: number;
   roe?: number;
   roce?: number;
   grossMarginPct?: number;
