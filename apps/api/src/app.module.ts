@@ -8,6 +8,7 @@ import { FundamentalsController } from './fundamentals.controller';
 import { FundamentalsService } from './fundamentals.service';
 import { HistoricalValuationService } from './historical-valuation.service';
 import { TradingController } from './trading.controller';
+import { TradingEventsService } from './trading-events.service';
 import { TradingReconciliationService } from './trading-reconciliation.service';
 import { TradingRepository } from './trading.repository';
 import { TradingService } from './trading.service';
@@ -24,7 +25,7 @@ class HealthController {
   controllers: [HealthController, MarketDataController, FundamentalsController, TradingController],
   providers: [
     MarketDataService, MarketDataRepository, MarketDataCache, MutualFundsService, FundamentalsService,
-    HistoricalValuationService, TradingRepository, TradingService, TradingReconciliationService,
+    HistoricalValuationService, TradingRepository, TradingService, TradingReconciliationService, TradingEventsService,
   ],
 })
 export class AppModule {}
