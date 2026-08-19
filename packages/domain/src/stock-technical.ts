@@ -71,14 +71,16 @@ export function calculateTechnicalIndicators(points: PricePoint[]): TechnicalInd
   }
 
   const relativeTo = (value: number | undefined) => value === undefined ? undefined : (latestClose / value - 1) * 100;
-  return {
-    latestClose,
-    sma20,
-    sma50,
-    sma200,
-    rsi14,
-    priceVsSma20Pct: relativeTo(sma20),
-    priceVsSma50Pct: relativeTo(sma50),
-    priceVsSma200Pct: relativeTo(sma200),
-  };
+  const result: TechnicalIndicators = { latestClose };
+  if (sma20 !== undefined) result.sma20 = sma20;
+  if (sma50 !== undefined) result.sma50 = sma50;
+  if (sma200 !== undefined) result.sma200 = sma200;
+  if (rsi14 !== undefined) result.rsi14 = rsi14;
+  const priceVsSma20Pct = relativeTo(sma20);
+  const priceVsSma50Pct = relativeTo(sma50);
+  const priceVsSma200Pct = relativeTo(sma200);
+  if (priceVsSma20Pct !== undefined) result.priceVsSma20Pct = priceVsSma20Pct;
+  if (priceVsSma50Pct !== undefined) result.priceVsSma50Pct = priceVsSma50Pct;
+  if (priceVsSma200Pct !== undefined) result.priceVsSma200Pct = priceVsSma200Pct;
+  return result;
 }
