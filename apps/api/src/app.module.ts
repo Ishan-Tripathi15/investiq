@@ -22,13 +22,16 @@ import { AuthRepository } from './auth.repository';
 import { AuthService } from './auth.service';
 import { requestContextMiddleware } from './request-context.middleware';
 import { HttpObservabilityInterceptor } from './http-observability.interceptor';
+import { BrokerConnectionController } from './broker-connection.controller';
+import { BrokerConnectionRepository } from './broker-connection.repository';
+import { BrokerConnectionService } from './broker-connection.service';
 
 @Controller('health')
 class HealthController { @Get() health() { return { status: 'ok', service: 'investiq-api', version: 'v1' }; } }
 
 @Module({
   imports: [ThrottlerModule.forRoot({ throttlers: [{ name: 'default', ttl: 60_000, limit: 120 }] })],
-  controllers: [HealthController, AuthController, MarketDataController, FundamentalsController, TradingController, TradingRiskController],
+  controllers: [HealthController, AuthController, MarketDataController, FundamentalsController, TradingController, TradingRiskController, BrokerConnectionController],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_INTERCEPTOR, useClass: HttpObservabilityInterceptor },
@@ -36,6 +39,7 @@ class HealthController { @Get() health() { return { status: 'ok', service: 'inve
     MarketDataService, MarketDataRepository, MarketDataCache, MutualFundsService, FundamentalsService,
     HistoricalValuationService, TradingRepository, TradingRiskService, TradingService,
     TradingReconciliationService, TradingEventsService,
+    BrokerConnectionRepository, BrokerConnectionService,
   ],
 })
 export class AppModule implements NestModule {
