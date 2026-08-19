@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import test from 'node:test';
+import assert from 'node:assert/strict';
 import { buildFundComparison, scoreHistoricalFunds } from './mutual-fund-comparison';
 
 const pointsA = [
@@ -19,21 +20,19 @@ const pointsB = [
   { timestamp: '2025-01-01T00:00:00Z', nav: 175 },
 ];
 
-describe('mutual fund comparison', () => {
-  it('builds comparable historical metrics', () => {
-    const result = buildFundComparison({ key: '1:100', points: pointsA });
-    expect(result.risk?.observations).toBe(6);
-    expect(result.risk?.cagrPct).toBeGreaterThan(0);
-    expect(result.rolling.some((item) => item.windowYears === 3)).toBe(true);
-  });
+test('mutual fund comparison: builds comparable historical metrics', () => {
+  const result = buildFundComparison({ key: '1:100', points: pointsA });
+  assert.equal(result.risk?.observations, 6);
+  assert.ok((result.risk?.cagrPct ?? 0) > 0);
+  assert.ok(result.rolling.some((item) => item.windowYears === 3));
+});
 
-  it('scores funds descriptively without forecasting', () => {
-    const results = scoreHistoricalFunds([
-      buildFundComparison({ key: '1:100', points: pointsA }),
-      buildFundComparison({ key: '2:200', points: pointsB }),
-    ]);
-    expect(results).toHaveLength(2);
-    expect(results[0]?.score).toBeGreaterThan(results[1]?.score ?? 0);
-    expect(results[0]?.strengths).toContain('Highest historical CAGR');
-  });
+test('mutual fund comparison: scores funds descriptively without forecasting', () => {
+  const results = scoreHistoricalFunds([
+    buildFundComparison({ key: '1:100', points: pointsA }),
+    buildFundComparison({ key: '2:200', points: pointsB }),
+  ]);
+  assert.equal(results.length, 2);
+  assert.ok((results[0]?.score ?? 0) > (results[1]?.score ?? 0));
+  assert.ok(results[0]?.strengths.includes('Highest historical CAGR'));
 });
