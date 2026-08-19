@@ -34,3 +34,4 @@ export * from './trading';
 export * from './trading-risk';
 export * from './trading-session';
 export * from './trading-capabilities';
+export * from './auth-risk';
