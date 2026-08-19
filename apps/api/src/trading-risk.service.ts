@@ -16,16 +16,16 @@ export class TradingRiskService {
     this.broker = createBrokerAdapter();
   }
 
-  async evaluate(request: OrderRequest) {
+  async evaluate(userId: string, request: OrderRequest) {
     const health = await this.broker.health();
     if (!health.configured || !health.connected) {
       throw new ServiceUnavailableException(health.message);
     }
 
     const [account, positions, recentOrders] = await Promise.all([
-      this.broker.getAccount(),
-      this.broker.getPositions(),
-      this.broker.listOrders(),
+      this.broker.getAccount(userId),
+      this.broker.getPositions(userId),
+      this.broker.listOrders(userId),
     ]);
 
     const result = evaluatePreTradeRisk(request, {
