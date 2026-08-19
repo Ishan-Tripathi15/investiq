@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { BrokerCapabilities, Order, OrderRequest, PositionPnl } from '@investiq/domain';
 import type { BrokerAdapter, BrokerHealth, BrokerQuote, TradingAccount } from './trading.types';
+import { resolveBrokerConfiguration } from './broker-config';
 
 const UNCONFIGURED_CAPABILITIES: BrokerCapabilities = {
   broker: 'unconfigured',
@@ -18,19 +19,25 @@ const UNCONFIGURED_CAPABILITIES: BrokerCapabilities = {
 
 @Injectable()
 export class UnconfiguredBrokerAdapter implements BrokerAdapter {
-  readonly name = 'unconfigured';
+  readonly name: string;
+
+  constructor(name = 'unconfigured') {
+    this.name = name;
+  }
 
   async health(): Promise<BrokerHealth> {
     return {
       configured: false,
       connected: false,
       broker: this.name,
-      message: 'No execution broker is configured. InvestIQ will not simulate or fabricate order execution.',
+      message: this.name === 'unconfigured'
+        ? 'No execution broker is configured. InvestIQ will not simulate or fabricate order execution.'
+        : `Broker provider "${this.name}" is configured by name, but no production adapter is installed yet. InvestIQ will not simulate or fabricate execution.`,
     };
   }
 
   async capabilities(): Promise<BrokerCapabilities | null> {
-    return UNCONFIGURED_CAPABILITIES;
+    return { ...UNCONFIGURED_CAPABILITIES, broker: this.name };
   }
 
   async quote(_symbol: string): Promise<BrokerQuote | null> {
@@ -63,5 +70,6 @@ export class UnconfiguredBrokerAdapter implements BrokerAdapter {
 }
 
 export function createBrokerAdapter(): BrokerAdapter {
-  return new UnconfiguredBrokerAdapter();
+  const config = resolveBrokerConfiguration();
+  return new UnconfiguredBrokerAdapter(config.provider);
 }
