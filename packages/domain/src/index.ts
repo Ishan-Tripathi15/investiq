@@ -33,3 +33,4 @@ export * from './valuation-intelligence';
 export * from './trading';
 export * from './trading-risk';
 export * from './trading-session';
+export * from './trading-capabilities';
