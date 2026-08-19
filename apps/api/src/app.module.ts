@@ -20,6 +20,12 @@ import { AuthController } from './auth.controller';
 import { AuthGuard } from './auth.guard';
 import { AuthRepository } from './auth.repository';
 import { AuthService } from './auth.service';
+import { MfaController } from './mfa.controller';
+import { MfaRepository } from './mfa.repository';
+import { MfaService } from './mfa.service';
+import { ProfileController } from './profile.controller';
+import { ProfileRepository } from './profile.repository';
+import { ProfileService } from './profile.service';
 import { requestContextMiddleware } from './request-context.middleware';
 import { HttpObservabilityInterceptor } from './http-observability.interceptor';
 import { BrokerConnectionController } from './broker-connection.controller';
@@ -31,11 +37,11 @@ class HealthController { @Get() health() { return { status: 'ok', service: 'inve
 
 @Module({
   imports: [ThrottlerModule.forRoot({ throttlers: [{ name: 'default', ttl: 60_000, limit: 120 }] })],
-  controllers: [HealthController, AuthController, MarketDataController, FundamentalsController, TradingController, TradingRiskController, BrokerConnectionController],
+  controllers: [HealthController, AuthController, MfaController, ProfileController, MarketDataController, FundamentalsController, TradingController, TradingRiskController, BrokerConnectionController],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_INTERCEPTOR, useClass: HttpObservabilityInterceptor },
-    AuthRepository, AuthService, AuthGuard,
+    AuthRepository, AuthService, AuthGuard, MfaRepository, MfaService, ProfileRepository, ProfileService,
     MarketDataService, MarketDataRepository, MarketDataCache, MutualFundsService, FundamentalsService,
     HistoricalValuationService, TradingRepository, TradingRiskService, TradingService,
     TradingReconciliationService, TradingEventsService,
@@ -43,7 +49,5 @@ class HealthController { @Get() health() { return { status: 'ok', service: 'inve
   ],
 })
 export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer.apply(requestContextMiddleware).forRoutes('*');
-  }
+  configure(consumer: MiddlewareConsumer) { consumer.apply(requestContextMiddleware).forRoutes('*'); }
 }
