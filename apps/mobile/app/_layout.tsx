@@ -6,6 +6,7 @@ import { getAccessToken } from '@/auth';
 import { requireBiometricUnlock } from '@/biometrics';
 
 const PUBLIC_ROUTES = new Set(['/login']);
+let biometricSessionUnlocked = false;
 
 export default function RootLayout() {
   const pathname = usePathname();
@@ -14,17 +15,18 @@ export default function RootLayout() {
   useEffect(() => {
     let cancelled = false;
     async function guard() {
-      if (PUBLIC_ROUTES.has(pathname)) return;
+      if (PUBLIC_ROUTES.has(pathname) || biometricSessionUnlocked) return;
       const token = await getAccessToken();
       if (!token) return;
       const ok = await requireBiometricUnlock();
       if (cancelled) return;
       if (!ok) {
         setLocked(true);
-        await Alert.alert('InvestIQ locked', 'Biometric verification is required to continue.');
+        Alert.alert('InvestIQ locked', 'Biometric verification is required to continue.');
         router.replace('/login');
         return;
       }
+      biometricSessionUnlocked = true;
       setLocked(false);
     }
     void guard();
