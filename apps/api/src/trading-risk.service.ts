@@ -43,6 +43,12 @@ export class TradingRiskService {
       throw new BadRequestException({ message: 'Pre-trade risk check failed', risk: result });
     }
 
-    return { ...result, broker: health.broker };
+    return {
+      ...result,
+      message: result.decision === 'approved'
+        ? 'Pre-trade risk checks approved the order.'
+        : 'Pre-trade risk checks are unavailable.',
+      broker: health.broker,
+    };
   }
 }
