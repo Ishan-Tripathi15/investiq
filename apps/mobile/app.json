@@ -14,7 +14,10 @@
     "android": {
       "package": "com.investiq.app"
     },
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router",
+      ["expo-local-authentication", { "faceIDPermission": "Allow InvestIQ to use Face ID to protect your account and portfolio." }]
+    ],
     "experiments": { "typedRoutes": true }
   }
 }
