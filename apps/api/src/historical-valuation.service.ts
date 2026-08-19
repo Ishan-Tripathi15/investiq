@@ -63,7 +63,18 @@ export class HistoricalValuationService {
           if (distance < nearestDistance) { nearest = cap; nearestDistance = distance; }
         }
         const matched = nearest && nearestDistance <= 7 * 24 * 60 * 60 * 1000 ? nearest : undefined;
-        return { date: period.fiscalDate, marketCap: matched?.value, earnings: period.netIncome, revenue: period.revenue, ebitda: period.ebitda };
+        const enterpriseValue = matched?.value !== undefined && period.totalDebt !== undefined && period.totalCash !== undefined
+          ? matched.value + period.totalDebt - period.totalCash
+          : undefined;
+        return {
+          date: period.fiscalDate,
+          marketCap: matched?.value,
+          enterpriseValue,
+          earnings: period.netIncome,
+          bookValue: period.bookValue,
+          revenue: period.revenue,
+          ebitda: period.ebitda,
+        };
       });
 
       const ratios = buildHistoricalValuation(inputs);
