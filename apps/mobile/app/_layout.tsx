@@ -4,9 +4,11 @@ import { StatusBar } from 'expo-status-bar';
 import { Alert, View } from 'react-native';
 import { getAccessToken } from '@/auth';
 import { requireBiometricUnlock } from '@/biometrics';
+import { registerForSecurityPushNotifications } from '@/notifications';
 
 const PUBLIC_ROUTES = new Set(['/login']);
 let biometricSessionUnlocked = false;
+let pushRegistrationAttempted = false;
 
 export default function RootLayout() {
   const pathname = usePathname();
@@ -28,6 +30,10 @@ export default function RootLayout() {
       }
       biometricSessionUnlocked = true;
       setLocked(false);
+      if (!pushRegistrationAttempted) {
+        pushRegistrationAttempted = true;
+        try { await registerForSecurityPushNotifications(); } catch { /* Push setup is optional until production credentials are configured. */ }
+      }
     }
     void guard();
     return () => { cancelled = true; };
