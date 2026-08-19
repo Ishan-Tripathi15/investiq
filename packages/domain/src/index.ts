@@ -25,3 +25,4 @@ export * from './stock-intelligence';
 export * from './stock-technical';
 export * from './financial-intelligence';
 export * from './scenario-engine';
+export * from './valuation-intelligence';
