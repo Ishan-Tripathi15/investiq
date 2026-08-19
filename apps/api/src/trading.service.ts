@@ -16,9 +16,7 @@ export class TradingService {
     private readonly risk: TradingRiskService,
     private readonly connections: BrokerConnectionRepository,
     private readonly transactionAuthorization: TransactionAuthorizationService,
-  ) {
-    this.broker = createBrokerAdapter(connections);
-  }
+  ) { this.broker = createBrokerAdapter(connections); }
 
   async status() { return this.broker.health(); }
   async capabilities() { return this.broker.capabilities(); }
@@ -31,8 +29,7 @@ export class TradingService {
   }
 
   async preview(userId: string, request: OrderRequest) {
-    const errors = validateOrder(request);
-    if (errors.length) throw new BadRequestException({ message: 'Invalid order', errors });
+    const errors = validateOrder(request); if (errors.length) throw new BadRequestException({ message: 'Invalid order', errors });
     const estimatedValue = (request.price ?? 0) * request.quantity;
     const health = await this.broker.health(userId);
     const capabilities = await this.capabilityCheck(request);
@@ -74,8 +71,15 @@ export class TradingService {
       void this.repository.audit(userId, 'order.risk_rejected', { request, risk }, orderId, key);
       throw new BadRequestException({ message: reason, risk });
     }
-    await this.transactionAuthorization.consume(userId, transactionAuthorization, request);
-    void this.repository.audit(userId, 'order.transaction_authorized', { authorization: 'one_time_mfa', request }, orderId, key);
+    try {
+      await this.transactionAuthorization.consume(userId, transactionAuthorization, request);
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : 'Transaction authorization failed';
+      if (key) await this.repository.failExecution(key, reason);
+      void this.repository.audit(userId, 'order.authorization_failed', { request, reason }, orderId, key);
+      throw error;
+    }
+    void this.repository.audit(userId, 'order.transaction_authorized', { authorization: 'one_time_mfa' }, orderId, key);
     void this.repository.audit(userId, 'order.risk_approved', { request, risk }, orderId, key);
     try {
       const order = await this.broker.placeOrder(userId, request);
