@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Headers, Param, Post } from '@nestjs/common';
 import type { OrderRequest } from '@investiq/domain';
 import { TradingService } from './trading.service';
 
@@ -17,8 +17,8 @@ export class TradingController {
   }
 
   @Post('orders')
-  placeOrder(@Body() request: OrderRequest) {
-    return this.trading.placeOrder(request);
+  placeOrder(@Body() request: OrderRequest, @Headers('idempotency-key') idempotencyKey?: string) {
+    return this.trading.placeOrder(request, idempotencyKey);
   }
 
   @Get('orders')
