@@ -31,6 +31,8 @@ import { HttpObservabilityInterceptor } from './http-observability.interceptor';
 import { BrokerConnectionController } from './broker-connection.controller';
 import { BrokerConnectionRepository } from './broker-connection.repository';
 import { BrokerConnectionService } from './broker-connection.service';
+import { TransactionAuthorizationRepository } from './transaction-authorization.repository';
+import { TransactionAuthorizationService } from './transaction-authorization.service';
 
 @Controller('health')
 class HealthController { @Get() health() { return { status: 'ok', service: 'investiq-api', version: 'v1' }; } }
@@ -46,6 +48,7 @@ class HealthController { @Get() health() { return { status: 'ok', service: 'inve
     HistoricalValuationService, TradingRepository, TradingRiskService, TradingService,
     TradingReconciliationService, TradingEventsService,
     BrokerConnectionRepository, BrokerConnectionService,
+    TransactionAuthorizationRepository, TransactionAuthorizationService,
   ],
 })
 export class AppModule implements NestModule {
