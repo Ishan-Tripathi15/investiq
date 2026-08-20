@@ -1,5 +1,5 @@
 import { Injectable, ServiceUnavailableException } from '@nestjs/common';
-import { buildPortfolioIntelligence, buildRiskTwin, type PortfolioProfile } from '@investiq/domain';
+import { buildPortfolioExplanation, buildPortfolioIntelligence, buildRiskTwin, type PortfolioProfile } from '@investiq/domain';
 import { TradingService } from './trading.service';
 import { ProfileService } from './profile.service';
 
@@ -7,7 +7,7 @@ import { ProfileService } from './profile.service';
 export class PortfolioIntelligenceService {
   constructor(private readonly trading: TradingService, private readonly profile: ProfileService) {}
 
-  async analyze(userId: string) {
+  private async build(userId: string) {
     const [account, positions, profile] = await Promise.all([
       this.trading.account(userId),
       this.trading.positions(userId),
@@ -23,7 +23,26 @@ export class PortfolioIntelligenceService {
     };
     const intelligence = buildPortfolioIntelligence(account.totalEquity, account.availableCash ?? 0, holdings, portfolioProfile);
     const riskTwin = buildRiskTwin({ equity: account.totalEquity, availableCash: account.availableCash ?? 0, positions: holdings });
+    return { account, intelligence, riskTwin };
+  }
 
-    return { generatedAt: new Date().toISOString(), source: { verified: true }, intelligence, riskTwin };
+  async analyze(userId: string) {
+    const { account, intelligence, riskTwin } = await this.build(userId);
+    return {
+      generatedAt: new Date().toISOString(),
+      source: { provider: account.broker, verified: true },
+      intelligence,
+      riskTwin,
+      explanation: buildPortfolioExplanation(intelligence, riskTwin),
+    };
+  }
+
+  async explain(userId: string) {
+    const { account, intelligence, riskTwin } = await this.build(userId);
+    return {
+      generatedAt: new Date().toISOString(),
+      source: { provider: account.broker, verified: true },
+      explanation: buildPortfolioExplanation(intelligence, riskTwin),
+    };
   }
 }
