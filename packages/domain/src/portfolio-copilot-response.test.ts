@@ -53,7 +53,7 @@ test('rejects unsupported evidence citation', () => {
 
 test('rejects uncited numeric claims', () => {
   assert.throws(() => validatePortfolioCopilotResponse({
-    answer: 'Your portfolio is down 12%. [risk-level]',
+    answer: 'Your portfolio is down 12%.',
     confidence: 'medium',
     riskLevel: 'high',
     limitations: [],
