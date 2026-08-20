@@ -31,7 +31,7 @@ export class PortfolioIntelligenceService {
   }
 
   async analyze(userId: string) {
-    const { account, brokerCapabilities, intelligence, riskTwin } = await this.build(userId);
+    const { brokerCapabilities, intelligence, riskTwin } = await this.build(userId);
     return {
       generatedAt: new Date().toISOString(),
       source: { provider: brokerCapabilities?.broker ?? 'unconfigured', verified: true },
@@ -42,7 +42,7 @@ export class PortfolioIntelligenceService {
   }
 
   async explain(userId: string) {
-    const { account, brokerCapabilities, intelligence, riskTwin } = await this.build(userId);
+    const { brokerCapabilities, intelligence, riskTwin } = await this.build(userId);
     return {
       generatedAt: new Date().toISOString(),
       source: { provider: brokerCapabilities?.broker ?? 'unconfigured', verified: true },
