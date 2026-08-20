@@ -13,4 +13,10 @@ export class PortfolioIntelligenceController {
   intelligenceReport(@Req() req: AuthenticatedRequest) {
     return this.intelligence.analyze(req.user!.id);
   }
+
+  @UseGuards(AuthGuard, PermissionGuard('portfolio:read'))
+  @Get('explanation')
+  explanation(@Req() req: AuthenticatedRequest) {
+    return this.intelligence.explain(req.user!.id);
+  }
 }
