@@ -69,28 +69,25 @@ export function buildAiAnalysisContext(
   sources: AiDataSource[],
   knowledge?: KnowledgeHit[],
 ): AiAnalysisContext {
-  const normalizedFeatures: AiNumericFeatures = {
-    periodReturnPct: finite(features.periodReturnPct),
-    cagrPct: finite(features.cagrPct),
-    volatilityPct: finite(features.volatilityPct),
-    maxDrawdownPct: finite(features.maxDrawdownPct),
-    revenueCagrPct: finite(features.revenueCagrPct),
-    earningsCagrPct: finite(features.earningsCagrPct),
-    freeCashFlowCagrPct: finite(features.freeCashFlowCagrPct),
-    pe: finite(features.pe),
-    pb: finite(features.pb),
-    ps: finite(features.ps),
-    evToEbitda: finite(features.evToEbitda),
-    sentimentScore: features.sentimentScore === undefined ? undefined : clamp(features.sentimentScore, -1, 1),
-  };
+  const normalizedFeatures: AiNumericFeatures = {};
+  const numericKeys: Array<keyof AiNumericFeatures> = [
+    'periodReturnPct', 'cagrPct', 'volatilityPct', 'maxDrawdownPct', 'revenueCagrPct',
+    'earningsCagrPct', 'freeCashFlowCagrPct', 'pe', 'pb', 'ps', 'evToEbitda', 'sentimentScore',
+  ];
+  for (const key of numericKeys) {
+    const value = finite(features[key]);
+    if (value !== undefined) normalizedFeatures[key] = value;
+  }
+  if (features.sentimentScore !== undefined) {
+    normalizedFeatures.sentimentScore = clamp(features.sentimentScore, -1, 1);
+  }
 
   const quality = assessAiDataQuality(sources, normalizedFeatures);
-  return {
+  const context: AiAnalysisContext = {
     symbol: symbol.trim().toUpperCase(),
     asOf,
     features: normalizedFeatures,
     sources: sources.map((source) => ({ ...source })),
-    knowledge: knowledge?.map((hit) => ({ ...hit })),
     quality,
     instructions: [
       'Use only supplied verified observations and bounded knowledge context; never invent market data.',
@@ -100,4 +97,6 @@ export function buildAiAnalysisContext(
       'Treat projections as scenarios, not guarantees or financial advice.',
     ],
   };
+  if (knowledge !== undefined) context.knowledge = knowledge.map((hit) => ({ ...hit }));
+  return context;
 }

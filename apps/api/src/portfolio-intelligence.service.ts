@@ -11,10 +11,11 @@ export class PortfolioIntelligenceService {
   constructor(private readonly trading: TradingService, private readonly profile: ProfileService) {}
 
   private async build(userId: string) {
-    const [account, positions, profile] = await Promise.all([
+    const [account, positions, profile, brokerCapabilities] = await Promise.all([
       this.trading.account(userId),
       this.trading.positions(userId),
       this.profile.get(userId),
+      this.trading.capabilities(),
     ]);
     if (account.totalEquity === undefined) throw new ServiceUnavailableException('Verified account equity is unavailable');
 
@@ -26,14 +27,14 @@ export class PortfolioIntelligenceService {
     };
     const intelligence = buildPortfolioIntelligence(account.totalEquity, account.availableCash ?? 0, holdings, portfolioProfile);
     const riskTwin = buildRiskTwin({ equity: account.totalEquity, availableCash: account.availableCash ?? 0, positions: holdings });
-    return { account, intelligence, riskTwin };
+    return { account, brokerCapabilities, intelligence, riskTwin };
   }
 
   async analyze(userId: string) {
-    const { account, intelligence, riskTwin } = await this.build(userId);
+    const { brokerCapabilities, intelligence, riskTwin } = await this.build(userId);
     return {
       generatedAt: new Date().toISOString(),
-      source: { provider: account.broker, verified: true },
+      source: { provider: brokerCapabilities?.broker ?? 'unconfigured', verified: true },
       intelligence,
       riskTwin,
       explanation: buildPortfolioExplanation(intelligence, riskTwin),
@@ -41,10 +42,10 @@ export class PortfolioIntelligenceService {
   }
 
   async explain(userId: string) {
-    const { account, intelligence, riskTwin } = await this.build(userId);
+    const { brokerCapabilities, intelligence, riskTwin } = await this.build(userId);
     return {
       generatedAt: new Date().toISOString(),
-      source: { provider: account.broker, verified: true },
+      source: { provider: brokerCapabilities?.broker ?? 'unconfigured', verified: true },
       explanation: buildPortfolioExplanation(intelligence, riskTwin),
     };
   }
