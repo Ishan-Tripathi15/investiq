@@ -1,11 +1,13 @@
 import { Injectable, ServiceUnavailableException } from '@nestjs/common';
-import { buildPortfolioCopilotContext, buildPortfolioExplanation, buildPortfolioIntelligence, buildRiskTwin, type PortfolioProfile } from '@investiq/domain';
+import { buildKnowledgeContext, buildPortfolioCopilotContext, buildPortfolioExplanation, buildPortfolioIntelligence, buildRiskTwin, type PortfolioProfile } from '@investiq/domain';
 import { TradingService } from './trading.service';
 import { ProfileService } from './profile.service';
-import { buildKnowledgeContext } from '@investiq/domain';
+import { createPortfolioCopilotProvider, type PortfolioCopilotProvider } from './portfolio-copilot.provider';
 
 @Injectable()
 export class PortfolioIntelligenceService {
+  private readonly copilotProvider: PortfolioCopilotProvider = createPortfolioCopilotProvider();
+
   constructor(private readonly trading: TradingService, private readonly profile: ProfileService) {}
 
   private async build(userId: string) {
@@ -47,15 +49,39 @@ export class PortfolioIntelligenceService {
     };
   }
 
+  private buildCopilotContext(question: string, intelligence: ReturnType<typeof buildPortfolioIntelligence>, riskTwin: ReturnType<typeof buildRiskTwin>) {
+    const knowledge = buildKnowledgeContext(`${question} portfolio risk diversification concentration liquidity stress`, 5);
+    return buildPortfolioCopilotContext({ question, intelligence, riskTwin, knowledge, asOf: new Date().toISOString() });
+  }
+
   async copilot(userId: string, question: string) {
     const { intelligence, riskTwin } = await this.build(userId);
-    const knowledge = buildKnowledgeContext(`${question} portfolio risk diversification concentration liquidity stress`, 5);
-    return buildPortfolioCopilotContext({
-      question,
-      intelligence,
-      riskTwin,
-      knowledge,
-      asOf: new Date().toISOString(),
-    });
+    return this.buildCopilotContext(question, intelligence, riskTwin);
+  }
+
+  async copilotAnswer(userId: string, question: string) {
+    const context = await this.copilotContextForUser(userId, question);
+    if (!this.copilotProvider.health().configured) {
+      throw new ServiceUnavailableException('Portfolio AI copilot is unavailable until AI provider credentials are configured');
+    }
+    return {
+      generatedAt: new Date().toISOString(),
+      source: this.copilotProvider.health(),
+      context: {
+        asOf: context.asOf,
+        answerability: context.answerability,
+        evidence: context.evidence,
+      },
+      response: await this.copilotProvider.answer(context),
+    };
+  }
+
+  private async copilotContextForUser(userId: string, question: string) {
+    const { intelligence, riskTwin } = await this.build(userId);
+    return this.buildCopilotContext(question, intelligence, riskTwin);
+  }
+
+  copilotHealth() {
+    return this.copilotProvider.health();
   }
 }
