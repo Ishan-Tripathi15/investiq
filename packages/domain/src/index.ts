@@ -40,3 +40,4 @@ export * from './ai-analysis';
 export * from './ai-evaluation';
 export * from './ai-knowledge';
 export * from './ai-risk-twin';
+export * from './market-memory';
