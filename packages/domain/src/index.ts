@@ -42,3 +42,4 @@ export * from './ai-knowledge';
 export * from './ai-risk-twin';
 export * from './market-memory';
 export * from './portfolio-intelligence';
+export * from './ai-portfolio-explanation';
