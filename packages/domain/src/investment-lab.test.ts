@@ -13,10 +13,11 @@ test('investment lab: calculates a SIP with exact annual step-up contributions',
 });
 
 test('investment lab: calculates lumpsum scenarios', () => {
-  const result = calculateLumpsumPlan(100000, 10, { conservative: 8, base: 12, optimistic: 15 });
-  assert.ok(Math.abs((result[0]?.value ?? 0) - 108000) < 0.01);
-  assert.ok(Math.abs((result[1]?.value ?? 0) - 112000) < 0.01);
-  assert.ok(Math.abs((result[2]?.value ?? 0) - 115000) < 0.01);
+  const years = 10;
+  const result = calculateLumpsumPlan(100000, years, { conservative: 8, base: 12, optimistic: 15 });
+  assert.ok(Math.abs((result[0]?.value ?? 0) - 100000 * Math.pow(1.08, years)) < 0.01);
+  assert.ok(Math.abs((result[1]?.value ?? 0) - 100000 * Math.pow(1.12, years)) < 0.01);
+  assert.ok(Math.abs((result[2]?.value ?? 0) - 100000 * Math.pow(1.15, years)) < 0.01);
 });
 
 test('investment lab: calculates reverse goal capital', () => {
