@@ -1,5 +1,5 @@
 import { Injectable, ServiceUnavailableException } from '@nestjs/common';
-import { buildAiAnalysisContext, calculateStockStats } from '@investiq/domain';
+import { buildAiAnalysisContext, buildKnowledgeContext, calculateStockStats } from '@investiq/domain';
 import { createAiProvider, type AiProvider } from './ai.provider';
 import { MarketDataService } from './market-data.service';
 
@@ -13,6 +13,12 @@ export class AiService {
     return this.provider.health();
   }
 
+  knowledge(query: string, limit = 5) {
+    const normalized = query.trim();
+    if (!normalized) throw new ServiceUnavailableException('Knowledge query is required');
+    return buildKnowledgeContext(normalized, limit);
+  }
+
   async analyzeSymbol(symbol: string) {
     const normalized = symbol.trim().toUpperCase();
     if (!normalized) throw new ServiceUnavailableException('Symbol is required');
@@ -23,6 +29,7 @@ export class AiService {
     }
 
     const stats = calculateStockStats(history.points.map((point) => ({ timestamp: point.timestamp, close: point.close })));
+    const knowledge = buildKnowledgeContext(`${normalized} market analysis valuation technical risk portfolio trading`, 5);
     const context = buildAiAnalysisContext(
       normalized,
       new Date().toISOString(),
@@ -32,8 +39,11 @@ export class AiService {
         volatilityPct: stats.annualizedVolatilityPct,
         maxDrawdownPct: stats.maxDrawdownPct,
       },
-      [{ kind: 'price', provider: history.source.provider, retrievedAt: history.source.retrievedAt, verified: true, observationCount: history.points.length },
-        { kind: 'risk', provider: history.source.provider, retrievedAt: history.source.retrievedAt, verified: true, observationCount: history.points.length }],
+      [
+        { kind: 'price', provider: history.source.provider, retrievedAt: history.source.retrievedAt, verified: true, observationCount: history.points.length },
+        { kind: 'risk', provider: history.source.provider, retrievedAt: history.source.retrievedAt, verified: true, observationCount: history.points.length },
+      ],
+      knowledge,
     );
 
     if (!context.quality.complete) {
@@ -43,6 +53,6 @@ export class AiService {
     const health = this.provider.health();
     if (!health.configured) throw new ServiceUnavailableException(health.message);
     const analysis = await this.provider.analyze(context);
-    return { symbol: normalized, dataQuality: context.quality, source: history.source, analysis };
+    return { symbol: normalized, dataQuality: context.quality, knowledge, source: history.source, analysis };
   }
 }
