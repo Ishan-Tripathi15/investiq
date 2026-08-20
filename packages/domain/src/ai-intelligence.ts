@@ -56,7 +56,7 @@ export function assessAiDataQuality(sources: AiDataSource[], features: AiNumeric
   if (verifiedSources !== sources.length) warnings.push('One or more data sources are unverified or empty.');
   if (featureCount < 4) warnings.push('The feature set is sparse; analysis should remain low-confidence.');
 
-  return { score, complete: score >= 75 && warnings.length === 0, warnings };
+  return { score, complete: score >= 70 && warnings.length === 0, warnings };
 }
 
 export function buildAiAnalysisContext(
