@@ -1,7 +1,8 @@
 import { Injectable, ServiceUnavailableException } from '@nestjs/common';
-import { buildPortfolioExplanation, buildPortfolioIntelligence, buildRiskTwin, type PortfolioProfile } from '@investiq/domain';
+import { buildPortfolioCopilotContext, buildPortfolioExplanation, buildPortfolioIntelligence, buildRiskTwin, type PortfolioProfile } from '@investiq/domain';
 import { TradingService } from './trading.service';
 import { ProfileService } from './profile.service';
+import { buildKnowledgeContext } from '@investiq/domain';
 
 @Injectable()
 export class PortfolioIntelligenceService {
@@ -44,5 +45,17 @@ export class PortfolioIntelligenceService {
       source: { provider: account.broker, verified: true },
       explanation: buildPortfolioExplanation(intelligence, riskTwin),
     };
+  }
+
+  async copilot(userId: string, question: string) {
+    const { intelligence, riskTwin } = await this.build(userId);
+    const knowledge = buildKnowledgeContext(`${question} portfolio risk diversification concentration liquidity stress`, 5);
+    return buildPortfolioCopilotContext({
+      question,
+      intelligence,
+      riskTwin,
+      knowledge,
+      asOf: new Date().toISOString(),
+    });
   }
 }
