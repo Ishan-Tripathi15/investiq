@@ -49,6 +49,7 @@ import { NotificationDeliveryService } from './notification-delivery.service';
 import { PortfolioIntelligenceController } from './portfolio-intelligence.controller';
 import { PortfolioIntelligenceService } from './portfolio-intelligence.service';
 import { PortfolioCopilotController } from './portfolio-copilot.controller';
+import { createPortfolioCopilotProvider } from './portfolio-copilot.provider';
 
 @Controller('health')
 class HealthController { @Get() health() { return { status: 'ok', service: 'investiq-api', version: 'v1' }; } }
@@ -63,6 +64,7 @@ class HealthController { @Get() health() { return { status: 'ok', service: 'inve
     SecurityActivityRepository, SecurityActivityService, SecurityNotificationsRepository, SecurityNotificationsService,
     NotificationDeliveryRepository, NotificationDeliveryService, AiService,
     PortfolioIntelligenceService,
+    { provide: 'PORTFOLIO_COPILOT_PROVIDER', useFactory: createPortfolioCopilotProvider },
     MarketDataService, MarketDataRepository, MarketDataCache, MutualFundsService, FundamentalsService,
     HistoricalValuationService, TradingRepository, TradingRiskService, TradingService,
     TradingReconciliationService, TradingEventsService,
