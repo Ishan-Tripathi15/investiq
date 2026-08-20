@@ -19,6 +19,7 @@ jobs:
         with:
           node-version: 22
       - run: pnpm install --no-frozen-lockfile
+      # Validate the exact PR merge result before deployment.
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm test
