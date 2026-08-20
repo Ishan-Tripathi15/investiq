@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { AuthGuard } from './auth.guard';
 import { PermissionGuard } from './permission.guard';
 import { AiService } from './ai.service';
@@ -10,6 +10,13 @@ export class AiController {
   @Get('status')
   status() {
     return this.ai.status();
+  }
+
+  @UseGuards(AuthGuard, PermissionGuard('portfolio:read'))
+  @Get('knowledge')
+  knowledge(@Query('q') query?: string, @Query('limit') limit?: string) {
+    if (!query?.trim()) throw new BadRequestException('q query parameter is required');
+    return this.ai.knowledge(query, Number(limit ?? 5));
   }
 
   @UseGuards(AuthGuard, PermissionGuard('portfolio:read'))
