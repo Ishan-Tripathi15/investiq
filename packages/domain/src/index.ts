@@ -26,7 +26,6 @@ export * from './mutual-fund-risk';
 export * from './mutual-fund-simulator';
 export * from './mutual-fund-comparison';
 export * from './stock-intelligence';
-export * from './stock-technical';
 export * from './financial-intelligence';
 export * from './scenario-engine';
 export * from './valuation-intelligence';
