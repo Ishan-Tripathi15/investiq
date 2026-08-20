@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from './auth.guard';
 import type { AuthenticatedRequest } from './auth.types';
 import { PermissionGuard } from './permission.guard';
@@ -10,12 +10,29 @@ interface CopilotBody { question?: unknown; }
 export class PortfolioCopilotController {
   constructor(private readonly intelligence: PortfolioIntelligenceService) {}
 
-  @UseGuards(AuthGuard, PermissionGuard('portfolio:read'))
-  @Post('copilot/context')
-  context(@Req() req: AuthenticatedRequest, @Body() body: CopilotBody) {
+  private validateQuestion(body: CopilotBody): string {
     if (typeof body.question !== 'string' || !body.question.trim()) {
       throw new BadRequestException('question must be a non-empty string');
     }
-    return this.intelligence.copilot(req.user!.id, body.question);
+    if (body.question.length > 1000) throw new BadRequestException('question must be 1000 characters or fewer');
+    return body.question;
+  }
+
+  @UseGuards(AuthGuard, PermissionGuard('portfolio:read'))
+  @Post('copilot/context')
+  context(@Req() req: AuthenticatedRequest, @Body() body: CopilotBody) {
+    return this.intelligence.copilot(req.user!.id, this.validateQuestion(body));
+  }
+
+  @UseGuards(AuthGuard, PermissionGuard('portfolio:read'))
+  @Post('copilot')
+  answer(@Req() req: AuthenticatedRequest, @Body() body: CopilotBody) {
+    return this.intelligence.copilotAnswer(req.user!.id, this.validateQuestion(body));
+  }
+
+  @UseGuards(AuthGuard, PermissionGuard('portfolio:read'))
+  @Get('copilot/health')
+  health() {
+    return this.intelligence.copilotHealth();
   }
 }
