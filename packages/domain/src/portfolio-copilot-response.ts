@@ -27,7 +27,9 @@ function cleanText(value: unknown, field: string): string {
 
 function validateEvidenceIds(answer: string, context: PortfolioCopilotContext): string[] {
   const available = new Set(context.evidence.map((item) => item.id));
-  const ids = [...answer.matchAll(EVIDENCE_ID_PATTERN)].map((match) => match[1]).filter(Boolean);
+  const ids = [...answer.matchAll(EVIDENCE_ID_PATTERN)]
+    .map((match) => match[1])
+    .filter((id): id is string => typeof id === 'string');
   if (!ids.length) throw new Error('Copilot answer must cite at least one evidence identifier');
   const unique = [...new Set(ids)];
   const unsupported = unique.filter((id) => !available.has(id));
