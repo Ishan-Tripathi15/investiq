@@ -34,9 +34,7 @@ function cleanQuestion(question: string): string {
   return normalized;
 }
 
-function pct(value: number): string {
-  return `${value.toFixed(2)}%`;
-}
+function pct(value: number): string { return `${value.toFixed(2)}%`; }
 
 export function buildPortfolioCopilotContext(input: PortfolioCopilotInput): PortfolioCopilotContext {
   const question = cleanQuestion(input.question);
@@ -48,26 +46,17 @@ export function buildPortfolioCopilotContext(input: PortfolioCopilotInput): Port
     { id: 'invested-value', label: 'Invested value', value: intelligence.investedValue.toFixed(2), source: 'portfolio' },
     { id: 'equity', label: 'Portfolio equity', value: intelligence.equity.toFixed(2), source: 'portfolio' },
   ];
-
-  if (intelligence.largestPosition) {
-    evidence.push({ id: 'largest-position', label: 'Largest position', value: `${intelligence.largestPosition.symbol} (${pct(intelligence.largestPosition.weightPct)})`, source: 'portfolio' });
-  }
-  if (intelligence.betaWeighted !== undefined) {
-    evidence.push({ id: 'weighted-beta', label: 'Weighted beta', value: intelligence.betaWeighted.toFixed(2), source: 'portfolio' });
-  }
-  for (const sector of intelligence.sectorExposure.slice(0, 5)) {
-    evidence.push({ id: `sector:${sector.sector}`, label: `Sector: ${sector.sector}`, value: pct(sector.weightPct), source: 'portfolio' });
-  }
+  if (intelligence.largestPosition) evidence.push({ id: 'largest-position', label: 'Largest position', value: `${intelligence.largestPosition.symbol} (${pct(intelligence.largestPosition.weightPct)})`, source: 'portfolio' });
+  if (intelligence.betaWeighted !== undefined) evidence.push({ id: 'weighted-beta', label: 'Weighted beta', value: intelligence.betaWeighted.toFixed(2), source: 'portfolio' });
+  for (const sector of intelligence.sectorExposure.slice(0, 5)) evidence.push({ id: `sector:${sector.sector}`, label: `Sector: ${sector.sector}`, value: pct(sector.weightPct), source: 'portfolio' });
 
   const worstScenario = [...riskTwin.scenarios].sort((a, b) => b.lossPct - a.lossPct)[0];
-  if (worstScenario) {
-    evidence.push({ id: 'worst-stress', label: 'Largest configured stress loss', value: `${worstScenario.scenario}: ${pct(worstScenario.lossPct)}`, source: 'risk_twin' });
-  }
+  if (worstScenario) evidence.push({ id: 'worst-stress', label: 'Largest configured stress loss', value: `${worstScenario.scenario}: ${pct(worstScenario.lossPct)}`, source: 'risk_twin' });
   const breached = riskTwin.scenarios.filter((scenario) => scenario.breachedDailyLimit || scenario.breachedDrawdownLimit);
   evidence.push({ id: 'breached-scenarios', label: 'Stress scenarios breaching configured limits', value: String(breached.length), source: 'risk_twin' });
 
   const knowledge = (input.knowledge ?? []).slice(0, 5);
-  for (const hit of knowledge) evidence.push({ id: `knowledge:${hit.id}`, label: hit.title, value: hit.summary, source: 'knowledge' });
+  for (const hit of knowledge) evidence.push({ id: `knowledge:${hit.documentId}`, label: hit.title, value: hit.snippet, source: 'knowledge' });
 
   const limitations: string[] = [
     'Portfolio evidence is limited to verified account and position data supplied to this context.',
