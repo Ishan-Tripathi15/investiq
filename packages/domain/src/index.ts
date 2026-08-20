@@ -38,3 +38,4 @@ export * from './auth-risk';
 export * from './ai-intelligence';
 export * from './ai-analysis';
 export * from './ai-evaluation';
+export * from './ai-knowledge';
