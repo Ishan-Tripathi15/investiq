@@ -5,10 +5,7 @@ import { ProfileService } from './profile.service';
 
 @Injectable()
 export class PortfolioIntelligenceService {
-  constructor(
-    private readonly trading: TradingService,
-    private readonly profile: ProfileService,
-  ) {}
+  constructor(private readonly trading: TradingService, private readonly profile: ProfileService) {}
 
   async analyze(userId: string) {
     const [account, positions, profile] = await Promise.all([
@@ -16,41 +13,17 @@ export class PortfolioIntelligenceService {
       this.trading.positions(userId),
       this.profile.get(userId),
     ]);
+    if (account.totalEquity === undefined) throw new ServiceUnavailableException('Verified account equity is unavailable');
 
-    if (account.totalEquity === undefined) {
-      throw new ServiceUnavailableException('Verified account equity is unavailable');
-    }
-
-    const holdings = positions.map((position) => ({
-      symbol: position.symbol,
-      marketValue: position.marketValue,
-    }));
-
+    const holdings = positions.map((position) => ({ symbol: position.symbol, marketValue: position.marketValue }));
     const portfolioProfile: PortfolioProfile = {
-      ...(profile.riskProfile === 'conservative' || profile.riskProfile === 'moderate' || profile.riskProfile === 'aggressive'
-        ? { riskTolerance: profile.riskProfile }
+      ...(profile.risk_profile === 'conservative' || profile.risk_profile === 'moderate' || profile.risk_profile === 'aggressive'
+        ? { riskTolerance: profile.risk_profile }
         : {}),
     };
+    const intelligence = buildPortfolioIntelligence(account.totalEquity, account.availableCash ?? 0, holdings, portfolioProfile);
+    const riskTwin = buildRiskTwin({ equity: account.totalEquity, availableCash: account.availableCash ?? 0, positions: holdings });
 
-    const intelligence = buildPortfolioIntelligence(
-      account.totalEquity,
-      account.availableCash ?? 0,
-      holdings,
-      portfolioProfile,
-    );
-
-    const riskTwin = buildRiskTwin({
-      equity: account.totalEquity,
-      availableCash: account.availableCash ?? 0,
-      positions: holdings,
-    });
-
-    return {
-      userId,
-      generatedAt: new Date().toISOString(),
-      source: { provider: account.broker, verified: true },
-      intelligence,
-      riskTwin,
-    };
+    return { generatedAt: new Date().toISOString(), source: { verified: true }, intelligence, riskTwin };
   }
 }
