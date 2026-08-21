@@ -19,6 +19,7 @@ export class TradingService {
   ) { this.broker = createBrokerAdapter(connections); }
 
   async status() { return this.broker.health(); }
+  async health(userId: string) { return this.broker.health(userId); }
   async capabilities() { return this.broker.capabilities(); }
   async quote(symbol: string) { const normalized = symbol.trim().toUpperCase(); if (!normalized) throw new BadRequestException('Symbol is required'); return this.broker.quote(normalized); }
 
