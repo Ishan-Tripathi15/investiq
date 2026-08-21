@@ -49,6 +49,7 @@ import { NotificationDeliveryService } from './notification-delivery.service';
 import { PortfolioIntelligenceController } from './portfolio-intelligence.controller';
 import { PortfolioIntelligenceService } from './portfolio-intelligence.service';
 import { PortfolioCopilotController } from './portfolio-copilot.controller';
+import { PortfolioMemoryRepository } from './portfolio-memory.repository';
 
 @Controller('health')
 class HealthController { @Get() health() { return { status: 'ok', service: 'investiq-api', version: 'v1' }; } }
@@ -62,7 +63,7 @@ class HealthController { @Get() health() { return { status: 'ok', service: 'inve
     AuthRepository, AuthService, AuthRiskService, AuthGuard, MfaRepository, MfaService, ProfileRepository, ProfileService, KycService,
     SecurityActivityRepository, SecurityActivityService, SecurityNotificationsRepository, SecurityNotificationsService,
     NotificationDeliveryRepository, NotificationDeliveryService, AiService,
-    PortfolioIntelligenceService,
+    PortfolioIntelligenceService, PortfolioMemoryRepository,
     MarketDataService, MarketDataRepository, MarketDataCache, MutualFundsService, FundamentalsService,
     HistoricalValuationService, TradingRepository, TradingRiskService, TradingService,
     TradingReconciliationService, TradingEventsService,
