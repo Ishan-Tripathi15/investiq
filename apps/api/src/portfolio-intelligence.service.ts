@@ -16,10 +16,11 @@ export class PortfolioIntelligenceService {
   ) {}
 
   private async build(userId: string) {
-    const [account, positions, profile] = await Promise.all([
+    const [account, positions, profile, brokerHealth] = await Promise.all([
       this.trading.account(userId),
       this.trading.positions(userId),
       this.profile.get(userId),
+      this.trading.health(userId),
     ]);
     if (account.totalEquity === undefined) throw new ServiceUnavailableException('Verified account equity is unavailable');
 
@@ -31,14 +32,14 @@ export class PortfolioIntelligenceService {
     };
     const intelligence = buildPortfolioIntelligence(account.totalEquity, account.availableCash ?? 0, holdings, portfolioProfile);
     const riskTwin = buildRiskTwin({ equity: account.totalEquity, availableCash: account.availableCash ?? 0, positions: holdings });
-    return { account, intelligence, riskTwin };
+    return { account, intelligence, riskTwin, brokerHealth };
   }
 
   async analyze(userId: string) {
-    const { account, intelligence, riskTwin } = await this.build(userId);
+    const { intelligence, riskTwin, brokerHealth } = await this.build(userId);
     return {
       generatedAt: new Date().toISOString(),
-      source: { provider: account.broker, verified: true },
+      source: { provider: brokerHealth.broker, verified: true },
       intelligence,
       riskTwin,
       explanation: buildPortfolioExplanation(intelligence, riskTwin),
@@ -46,10 +47,10 @@ export class PortfolioIntelligenceService {
   }
 
   async explain(userId: string) {
-    const { account, intelligence, riskTwin } = await this.build(userId);
+    const { intelligence, riskTwin, brokerHealth } = await this.build(userId);
     return {
       generatedAt: new Date().toISOString(),
-      source: { provider: account.broker, verified: true },
+      source: { provider: brokerHealth.broker, verified: true },
       explanation: buildPortfolioExplanation(intelligence, riskTwin),
     };
   }
