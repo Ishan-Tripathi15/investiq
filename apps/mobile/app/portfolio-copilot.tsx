@@ -25,8 +25,9 @@ function renderAnswer(answer: string, evidence: Evidence[]) {
   const parts = answer.split(/(\[[a-z0-9:_-]+\])/gi);
   return parts.map((part, index) => {
     const match = /^\[([a-z0-9:_-]+)\]$/i.exec(part);
-    if (!match) return <Text key={index}>{part}</Text>;
-    const item = byId.get(match[1]);
+    const evidenceId = match?.[1];
+    if (!evidenceId) return <Text key={index}>{part}</Text>;
+    const item = byId.get(evidenceId);
     return <Text key={index} style={styles.citation}>{item ? ` ${item.label} ` : part}</Text>;
   });
 }
