@@ -26,7 +26,10 @@ export * from './mutual-fund-risk';
 export * from './mutual-fund-simulator';
 export * from './mutual-fund-comparison';
 export * from './stock-intelligence';
-export * from './stock-technical';
+// stock-technical intentionally is not re-exported from the package root because
+// it defines calculateAnnualReturns / calculateTechnicalIndicators and their
+// AnnualReturn / TechnicalIndicators types independently from stock-intelligence.
+// Re-exporting both modules creates TS2308 ambiguous root exports.
 export * from './financial-intelligence';
 export * from './scenario-engine';
 export * from './valuation-intelligence';
