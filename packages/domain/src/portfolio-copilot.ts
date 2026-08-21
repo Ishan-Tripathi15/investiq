@@ -52,6 +52,7 @@ function cleanQuestion(question: string): string {
 }
 
 function pct(value: number): string { return `${value.toFixed(2)}%`; }
+function neutralizeHistoricalCitations(value: string): string { return value.replace(/\[([a-z0-9:_-]+)\]/gi, '($1)'); }
 
 export function buildPortfolioCopilotContext(input: PortfolioCopilotInput): PortfolioCopilotContext {
   const question = cleanQuestion(input.question);
@@ -84,7 +85,7 @@ export function buildPortfolioCopilotContext(input: PortfolioCopilotInput): Port
     evidence.push({
       id: `memory:${item.id}`,
       label: `Previous Copilot interaction (${new Date(item.createdAt).toISOString()})`,
-      value: `Question: ${item.question} Answer: ${item.answer.slice(0, 700)} ${snapshotText}`,
+      value: `Question: ${item.question} Answer: ${neutralizeHistoricalCitations(item.answer).slice(0, 700)} ${snapshotText}`,
       source: 'memory',
     });
   }
