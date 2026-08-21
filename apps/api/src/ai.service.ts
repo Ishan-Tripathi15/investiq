@@ -1,5 +1,5 @@
 import { Injectable, ServiceUnavailableException } from '@nestjs/common';
-import { buildAiAnalysisContext, buildKnowledgeContext, buildRiskTwin, calculateStockStats } from '@investiq/domain';
+import { buildAiAnalysisContext, buildKnowledgeContext, buildRiskTwin, calculateStockStats, type PortfolioCopilotContext } from '@investiq/domain';
 import { createAiProvider, type AiProvider } from './ai.provider';
 import { MarketDataService } from './market-data.service';
 import { TradingService } from './trading.service';
@@ -30,5 +30,10 @@ export class AiService {
     const health = this.provider.health(); if (!health.configured) throw new ServiceUnavailableException(health.message);
     const analysis = await this.provider.analyze(context);
     return { symbol: normalized, dataQuality: context.quality, knowledge, source: history.source, analysis };
+  }
+  async copilot(context: PortfolioCopilotContext) {
+    const health = this.provider.health();
+    if (!health.configured) throw new ServiceUnavailableException(health.message);
+    return this.provider.copilot(context);
   }
 }
