@@ -94,7 +94,7 @@ export function evaluateAiAnalysis(
   }
 
   if (analysis.confidence > testCase.maxConfidence) failures.push('overconfidence');
-  if (testCase.requiredRiskLevel !== 'unknown' && analysis.riskLevel !== testCase.requiredRiskLevel) failures.push('missing_risk');
+  if (analysis.riskLevel !== testCase.requiredRiskLevel) failures.push('missing_risk');
   if (testCase.mustMentionUncertainty && !containsUncertainty([...analysis.riskFactors, ...analysis.assumptions, ...analysis.invalidationConditions])) failures.push('missing_uncertainty');
   if (testCase.mustIncludeInvalidation && !containsRisk(analysis.invalidationConditions)) failures.push('missing_invalidation');
 
