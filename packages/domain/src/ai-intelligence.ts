@@ -69,20 +69,24 @@ export function buildAiAnalysisContext(
   sources: AiDataSource[],
   knowledge?: KnowledgeHit[],
 ): AiAnalysisContext {
-  const normalizedFeatures: AiNumericFeatures = {
-    periodReturnPct: finite(features.periodReturnPct),
-    cagrPct: finite(features.cagrPct),
-    volatilityPct: finite(features.volatilityPct),
-    maxDrawdownPct: finite(features.maxDrawdownPct),
-    revenueCagrPct: finite(features.revenueCagrPct),
-    earningsCagrPct: finite(features.earningsCagrPct),
-    freeCashFlowCagrPct: finite(features.freeCashFlowCagrPct),
-    pe: finite(features.pe),
-    pb: finite(features.pb),
-    ps: finite(features.ps),
-    evToEbitda: finite(features.evToEbitda),
-    sentimentScore: features.sentimentScore === undefined ? undefined : clamp(features.sentimentScore, -1, 1),
+  const normalizedFeatures: AiNumericFeatures = {};
+  const setFinite = (key: keyof AiNumericFeatures, value: number | undefined) => {
+    const normalized = finite(value);
+    if (normalized !== undefined) normalizedFeatures[key] = normalized;
   };
+
+  setFinite('periodReturnPct', features.periodReturnPct);
+  setFinite('cagrPct', features.cagrPct);
+  setFinite('volatilityPct', features.volatilityPct);
+  setFinite('maxDrawdownPct', features.maxDrawdownPct);
+  setFinite('revenueCagrPct', features.revenueCagrPct);
+  setFinite('earningsCagrPct', features.earningsCagrPct);
+  setFinite('freeCashFlowCagrPct', features.freeCashFlowCagrPct);
+  setFinite('pe', features.pe);
+  setFinite('pb', features.pb);
+  setFinite('ps', features.ps);
+  setFinite('evToEbitda', features.evToEbitda);
+  if (features.sentimentScore !== undefined) normalizedFeatures.sentimentScore = clamp(features.sentimentScore, -1, 1);
 
   const quality = assessAiDataQuality(sources, normalizedFeatures);
   return {
@@ -90,7 +94,7 @@ export function buildAiAnalysisContext(
     asOf,
     features: normalizedFeatures,
     sources: sources.map((source) => ({ ...source })),
-    knowledge: knowledge?.map((hit) => ({ ...hit })),
+    ...(knowledge ? { knowledge: knowledge.map((hit) => ({ ...hit })) } : {}),
     quality,
     instructions: [
       'Use only supplied verified observations and bounded knowledge context; never invent market data.',
