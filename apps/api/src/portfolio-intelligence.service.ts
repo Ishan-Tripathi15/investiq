@@ -73,26 +73,28 @@ export class PortfolioIntelligenceService {
   }
 
   async copilotAnswer(userId: string, question: string) {
-    const context = await this.copilotContextForUser(userId, question);
+    const { intelligence, riskTwin } = await this.build(userId);
+    const context = await this.buildCopilotContext(userId, question, intelligence, riskTwin);
     if (!this.copilotProvider.health().configured) {
       throw new ServiceUnavailableException('Portfolio AI copilot is unavailable until AI provider credentials are configured');
     }
+
     const response = await this.copilotProvider.answer(context);
-    const currentSnapshot = {
-      equity: context.evidence.find((item) => item.id === 'equity') ? Number(context.evidence.find((item) => item.id === 'equity')!.value) : 0,
-      cashValue: context.evidence.find((item) => item.id === 'cash-pct') ? 0 : 0,
-      cashPct: Number(context.evidence.find((item) => item.id === 'cash-pct')?.value.replace('%', '') ?? 0),
-      concentrationPct: Number(context.evidence.find((item) => item.id === 'concentration')?.value.replace('%', '') ?? 0),
-      riskLevel: context.evidence.find((item) => item.id === 'risk-level')?.value ?? 'unknown',
-      ...(context.evidence.find((item) => item.id === 'largest-position')?.value ? {
-        largestPosition: (() => {
-          const value = context.evidence.find((item) => item.id === 'largest-position')!.value;
-          const match = /^(.+) \(([^)]+)%\)$/.exec(value);
-          return match ? { symbol: match[1], weightPct: Number(match[2]) } : undefined;
-        })(),
-      } : {}),
-    };
-    await this.memory.add(userId, question, response.answer, response as unknown as Record<string, unknown>, currentSnapshot);
+    await this.memory.add(
+      userId,
+      question,
+      response.answer,
+      response as unknown as Record<string, unknown>,
+      {
+        equity: intelligence.equity,
+        cashValue: intelligence.cashValue,
+        cashPct: intelligence.cashPct,
+        concentrationPct: intelligence.concentrationPct,
+        riskLevel: intelligence.riskLevel,
+        ...(intelligence.largestPosition ? { largestPosition: intelligence.largestPosition } : {}),
+      },
+    );
+
     return {
       generatedAt: new Date().toISOString(),
       source: this.copilotProvider.health(),
@@ -104,11 +106,6 @@ export class PortfolioIntelligenceService {
       },
       response,
     };
-  }
-
-  private async copilotContextForUser(userId: string, question: string) {
-    const { intelligence, riskTwin } = await this.build(userId);
-    return this.buildCopilotContext(userId, question, intelligence, riskTwin);
   }
 
   async copilotMemory(userId: string, limit = 10) {
