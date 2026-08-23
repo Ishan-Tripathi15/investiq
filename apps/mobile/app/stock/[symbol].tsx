@@ -1,0 +1,73 @@
+import { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Link, useLocalSearchParams } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { colors, radius, spacing } from '@/theme';
+
+type Point = { timestamp: string; close: number; volume?: number };
+type Instrument = { symbol: string; name: string; exchange: string; micCode?: string; country: string; currency: string; type: string };
+type Quote = { symbol: string; name?: string; exchange?: string; currency?: string; price: number; previousClose?: number; change?: number; changePercent?: number; open?: number; high?: number; low?: number; volume?: number; isMarketOpen?: boolean; timestamp: string; source: { provider: string; retrievedAt: string } | null };
+type Detail = { available: boolean; instrument: Instrument | null; quote: Quote | null; history: Point[]; source: { provider: string; retrievedAt: string } | null; message?: string };
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000/api/v1';
+const ranges = ['1D', '1W', '1M', '6M', '1Y', '5Y'] as const;
+type Range = typeof ranges[number];
+
+function money(value?: number, currency = 'INR') {
+  if (value == null) return '—';
+  return currency === 'INR' ? `₹${value.toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : `${currency} ${value.toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
+}
+function change(value?: number) { return value == null ? '—' : `${value >= 0 ? '+' : ''}${value.toFixed(2)}`; }
+function percent(value?: number) { return value == null ? '—' : `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`; }
+
+export default function StockDetailScreen() {
+  const { symbol: rawSymbol } = useLocalSearchParams<{ symbol: string }>();
+  const symbol = (rawSymbol ?? '').toUpperCase();
+  const [detail, setDetail] = useState<Detail | null>(null);
+  const [range, setRange] = useState<Range>('1M');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  async function load() {
+    setLoading(true); setError(null);
+    try {
+      const response = await fetch(`${API_URL}/market-data/stocks/${encodeURIComponent(symbol)}`);
+      const data = await response.json() as Detail;
+      if (!response.ok || !data.available) throw new Error(data.message ?? 'Verified stock data is unavailable.');
+      setDetail(data);
+    } catch (e) {
+      setDetail(null);
+      setError(e instanceof Error ? e.message : 'Unable to reach the InvestIQ API.');
+    } finally { setLoading(false); }
+  }
+  useEffect(() => { if (symbol) void load(); }, [symbol]);
+
+  const quote = detail?.quote;
+  const points = useMemo(() => detail?.history ?? [], [detail]);
+  const chartPoints = useMemo(() => {
+    if (points.length <= 70) return points;
+    const step = Math.ceil(points.length / 70);
+    return points.filter((_, i) => i % step === 0 || i === points.length - 1);
+  }, [points]);
+  const min = Math.min(...chartPoints.map(p => p.close), 0);
+  const max = Math.max(...chartPoints.map(p => p.close), 1);
+  const span = Math.max(max - min, 0.000001);
+
+  return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+    <View style={styles.top}><Link href="/stocks" style={styles.back}>‹ Stocks</Link><Text style={styles.eyebrow}>MARKET DETAIL</Text></View>
+    {loading ? <View style={styles.loading}><ActivityIndicator size="large" color={colors.accent}/><Text style={styles.muted}>Loading verified market data…</Text></View> : error ? <View style={styles.error}><Text style={styles.errorTitle}>Stock data unavailable</Text><Text style={styles.muted}>{error}</Text><TouchableOpacity onPress={() => void load()} style={styles.retry}><Text style={styles.retryText}>Retry</Text></TouchableOpacity></View> : <>
+      <View style={styles.identity}><View style={{flex:1}}><Text style={styles.name}>{detail?.instrument?.name ?? quote?.name ?? symbol}</Text><Text style={styles.symbol}>{symbol} · {detail?.instrument?.exchange ?? quote?.exchange ?? 'India'}</Text></View><View style={[styles.marketPill, quote?.isMarketOpen && styles.marketOpen]}><View style={styles.dot}/><Text style={styles.marketText}>{quote?.isMarketOpen ? 'MARKET OPEN' : 'MARKET STATUS'}</Text></View></View>
+      <View style={styles.priceCard}><Text style={styles.price}>{money(quote?.price, quote?.currency)}</Text><Text style={[styles.change, (quote?.change ?? 0) < 0 && styles.negative]}>{change(quote?.change)}  ({percent(quote?.changePercent)})</Text><Text style={styles.timestamp}>Quote timestamp · {quote?.timestamp ? new Date(quote.timestamp).toLocaleString() : '—'}</Text></View>
+      <View style={styles.actions}><TouchableOpacity style={styles.watch}><Text style={styles.watchText}>☆ Add to watchlist</Text></TouchableOpacity><Link href={`/portfolio-copilot?symbol=${encodeURIComponent(symbol)}`} asChild><TouchableOpacity style={styles.ai}><Text style={styles.aiText}>✦ Ask InvestIQ</Text></TouchableOpacity></Link></View>
+      <View style={styles.card}><View style={styles.chartHeader}><View><Text style={styles.cardTitle}>Price chart</Text><Text style={styles.muted}>{points.length ? `${points.length} verified observations` : 'No historical series available'}</Text></View><Text style={styles.source}>{detail?.source?.provider ?? quote?.source?.provider ?? 'Provider pending'}</Text></View>
+        <View style={styles.chart}>{chartPoints.length > 1 ? chartPoints.slice(1).map((p, i) => { const prev=chartPoints[i]!; const x1=(i/(chartPoints.length-1))*94+3; const x2=((i+1)/(chartPoints.length-1))*94+3; const y1=94-((prev.close-min)/span)*82; const y2=94-((p.close-min)/span)*82; const dx=x2-x1, dy=y2-y1; const length=Math.sqrt(dx*dx+dy*dy); const angle=Math.atan2(dy,dx)*180/Math.PI; return <View key={`${p.timestamp}-${i}`} style={[styles.segment,{left:`${x1}%`,top:`${y1}%`,width:`${length}%`,transform:[{rotate:`${angle}deg`}]}]}/>; }) : <Text style={styles.chartText}>Historical chart unavailable</Text>}</View>
+        <View style={styles.ranges}>{ranges.map(r=><TouchableOpacity key={r} onPress={()=>setRange(r)} style={[styles.range,range===r&&styles.rangeActive]}><Text style={[styles.rangeText,range===r&&styles.rangeTextActive]}>{r}</Text></TouchableOpacity>)}</View>
+      </View>
+      <Text style={styles.section}>Market stats</Text><View style={styles.grid}>{[['Open',money(quote?.open,quote?.currency)],['Previous close',money(quote?.previousClose,quote?.currency)],['Day high',money(quote?.high,quote?.currency)],['Day low',money(quote?.low,quote?.currency)],['Volume',quote?.volume?.toLocaleString('en-IN') ?? '—'],['Exchange',detail?.instrument?.exchange ?? quote?.exchange ?? '—']].map(([label,value])=><View key={label} style={styles.stat}><Text style={styles.muted}>{label}</Text><Text style={styles.statValue}>{value}</Text></View>)}</View>
+      <View style={styles.feature}><Text style={styles.featureTitle}>More coming into this stock page</Text><Text style={styles.featureText}>📰 Live financial news · 🧠 AI research · ⭐ Watchlist alerts · 💰 Buy / Sell</Text><Text style={styles.featureSub}>These modules will connect to verified providers and the existing trading authorization flow.</Text></View>
+      <Text style={styles.disclaimer}>Market prices and history are shown only when supplied by a verified provider. Nothing on this screen is a fabricated or guaranteed market value.</Text>
+    </>}
+  </ScrollView></SafeAreaView>;
+}
+
+const styles=StyleSheet.create({safe:{flex:1,backgroundColor:colors.background},content:{padding:spacing.lg,paddingBottom:50,gap:spacing.lg},top:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},back:{color:colors.accent,fontSize:13,fontWeight:'800'},eyebrow:{color:colors.muted,fontSize:9,letterSpacing:1.4,fontWeight:'900'},muted:{color:colors.muted,fontSize:10,lineHeight:16},identity:{flexDirection:'row',alignItems:'center',gap:10},name:{color:colors.text,fontSize:24,fontWeight:'900',lineHeight:29},symbol:{color:colors.muted,fontSize:11,marginTop:4,fontWeight:'700'},marketPill:{flexDirection:'row',alignItems:'center',gap:5,backgroundColor:colors.surface,paddingHorizontal:8,paddingVertical:7,borderRadius:radius.pill,borderWidth:1,borderColor:colors.border},marketOpen:{backgroundColor:colors.accentSoft},dot:{width:6,height:6,borderRadius:3,backgroundColor:colors.accent},marketText:{color:colors.muted,fontSize:7,fontWeight:'900'},priceCard:{backgroundColor:colors.surface,borderRadius:radius.lg,borderWidth:1,borderColor:colors.border,padding:spacing.lg},price:{color:colors.text,fontSize:34,fontWeight:'900'},change:{color:colors.positive,fontSize:14,fontWeight:'800',marginTop:4},negative:{color:colors.negative},timestamp:{color:colors.muted,fontSize:9,marginTop:10},actions:{flexDirection:'row',gap:spacing.sm},watch:{flex:1,borderWidth:1,borderColor:colors.border,borderRadius:radius.md,padding:13,alignItems:'center',backgroundColor:colors.surface},watchText:{color:colors.text,fontSize:11,fontWeight:'800'},ai:{flex:1,borderRadius:radius.md,padding:13,alignItems:'center',backgroundColor:colors.accent},aiText:{color:colors.background,fontSize:11,fontWeight:'900'},card:{backgroundColor:colors.surface,borderRadius:radius.lg,borderWidth:1,borderColor:colors.border,padding:spacing.md,gap:spacing.md},chartHeader:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},cardTitle:{color:colors.text,fontSize:17,fontWeight:'900'},source:{color:colors.accent,fontSize:8,fontWeight:'900'},chart:{height:210,borderRadius:radius.md,backgroundColor:colors.surfaceElevated,overflow:'hidden',position:'relative',justifyContent:'center',alignItems:'center'},segment:{position:'absolute',height:2,backgroundColor:colors.accent,transformOrigin:'left center'},chartText:{color:colors.muted,fontSize:11},ranges:{flexDirection:'row',justifyContent:'space-between'},range:{paddingHorizontal:8,paddingVertical:7,borderRadius:radius.pill},rangeActive:{backgroundColor:colors.accent},rangeText:{color:colors.muted,fontSize:9,fontWeight:'900'},rangeTextActive:{color:colors.background},section:{color:colors.text,fontSize:19,fontWeight:'900'},grid:{flexDirection:'row',flexWrap:'wrap',gap:spacing.sm},stat:{width:'48%',backgroundColor:colors.surface,borderWidth:1,borderColor:colors.border,borderRadius:radius.md,padding:spacing.md},statValue:{color:colors.text,fontSize:14,fontWeight:'900',marginTop:5},feature:{backgroundColor:colors.accentSoft,borderRadius:radius.md,borderWidth:1,borderColor:colors.border,padding:spacing.md},featureTitle:{color:colors.accent,fontSize:12,fontWeight:'900'},featureText:{color:colors.text,fontSize:12,fontWeight:'800',lineHeight:21,marginTop:7},featureSub:{color:colors.muted,fontSize:9,lineHeight:15,marginTop:5},disclaimer:{color:colors.muted,fontSize:9,lineHeight:15},loading:{paddingVertical:90,alignItems:'center',gap:14},error:{backgroundColor:colors.surface,borderWidth:1,borderColor:colors.border,borderRadius:radius.lg,padding:spacing.lg,gap:10},errorTitle:{color:colors.text,fontSize:18,fontWeight:'900'},retry:{alignSelf:'flex-start',backgroundColor:colors.accent,paddingHorizontal:18,paddingVertical:10,borderRadius:radius.sm},retryText:{color:colors.background,fontSize:11,fontWeight:'900'}});
