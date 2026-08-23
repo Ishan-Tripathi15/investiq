@@ -12,6 +12,11 @@ const STARTERS = [
   'How much cash do I currently have?',
   'Which stress scenario is most severe?',
 ];
+const LOADING_STAGES = [
+  'Preparing your verified portfolio context…',
+  'Generating a grounded Copilot response…',
+  'Validating evidence and risk signals…',
+];
 
 type Evidence = { id: string; label: string; value: string; source: 'portfolio' | 'risk_twin' | 'knowledge' | 'memory' };
 type MemoryUsed = { id: number; createdAt: string; question: string };
@@ -36,6 +41,7 @@ export default function PortfolioCopilotScreen() {
   const [question, setQuestion] = useState('');
   const [result, setResult] = useState<ApiResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingStage, setLoadingStage] = useState(0);
   const [initializing, setInitializing] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,22 +59,42 @@ export default function PortfolioCopilotScreen() {
 
   useEffect(() => { void checkHealth(); }, [checkHealth]);
 
+  useEffect(() => {
+    if (!loading) return;
+    setLoadingStage(0);
+    const timer = setInterval(() => setLoadingStage((current) => Math.min(current + 1, LOADING_STAGES.length - 1)), 1400);
+    return () => clearInterval(timer);
+  }, [loading]);
+
   const ask = useCallback(async (value = question) => {
     const normalized = value.trim();
     if (!normalized || loading) return;
     setQuestion(normalized); setLoading(true); setError(null); setResult(null);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 25_000);
     try {
       const token = await getAccessToken();
       if (!token) { router.replace('/login'); return; }
       const response = await fetch(`${API_URL}/portfolio/copilot`, {
-        method: 'POST', headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' }, body: JSON.stringify({ question: normalized }),
+        method: 'POST',
+        headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+        body: JSON.stringify({ question: normalized }),
+        signal: controller.signal,
       });
       if (response.status === 401) { router.replace('/login'); return; }
       const payload = await response.json().catch(() => null) as Record<string, unknown> | null;
       if (!response.ok) throw new Error(typeof payload?.message === 'string' ? payload.message : 'Portfolio Copilot is unavailable');
       setResult(payload as unknown as ApiResult);
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to get a grounded Copilot response'); }
-    finally { setLoading(false); }
+    } catch (cause) {
+      if (cause instanceof DOMException && cause.name === 'AbortError') {
+        setError('Copilot took too long to respond. Please retry; your question was not submitted for trading or execution.');
+      } else {
+        setError(cause instanceof Error ? cause.message : 'Unable to get a grounded Copilot response');
+      }
+    } finally {
+      clearTimeout(timeout);
+      setLoading(false);
+    }
   }, [loading, question]);
 
   const clearMemory = useCallback(async () => {
@@ -92,17 +118,18 @@ export default function PortfolioCopilotScreen() {
           <Text style={styles.subtitle}>Ask about your verified portfolio. Copilot can now use relevant historical interactions while keeping current verified data authoritative.</Text>
         </View>
 
-        {error && <View style={styles.alert}><Text style={styles.alertTitle}>Copilot unavailable</Text><Text style={styles.muted}>{error}</Text></View>}
+        {error && <View style={styles.alert}><Text style={styles.alertTitle}>Copilot unavailable</Text><Text style={styles.muted}>{error}</Text>{question.trim() && <Pressable onPress={() => void ask()} disabled={loading} style={styles.retry}><Text style={styles.retryText}>Retry</Text></Pressable>}</View>}
 
         <View style={styles.card}>
           <Text style={styles.label}>Try a question</Text>
           <TextInput value={question} onChangeText={setQuestion} placeholder="Ask about concentration, cash, risk…" placeholderTextColor={colors.muted} multiline maxLength={1000} style={styles.input} editable={!loading} />
           <Pressable onPress={() => void ask()} disabled={!question.trim() || loading} style={({ pressed }) => [styles.ask, (!question.trim() || loading) && styles.disabled, pressed && styles.pressed]}>
-            {loading ? <ActivityIndicator /> : <Text style={styles.askText}>Ask Copilot</Text>}
+            {loading ? <View style={styles.askLoading}><ActivityIndicator /><Text style={styles.askLoadingText}>{LOADING_STAGES[loadingStage]}</Text></View> : <Text style={styles.askText}>Ask Copilot</Text>}
           </Pressable>
+          {loading && <View style={styles.progressRow}>{LOADING_STAGES.map((stage, index) => <View key={stage} style={[styles.progressDot, index <= loadingStage && styles.progressDotActive]} />)}</View>}
         </View>
 
-        {!result && <View style={styles.section}><Text style={styles.sectionTitle}>Suggested questions</Text>{STARTERS.map((starter) => <Pressable key={starter} onPress={() => void ask(starter)} disabled={loading} style={({ pressed }) => [styles.suggestion, pressed && styles.pressed]}><Text style={styles.suggestionText}>{starter}</Text><Text style={styles.arrow}>›</Text></Pressable>)}</View>}
+        {!result && !loading && <View style={styles.section}><Text style={styles.sectionTitle}>Suggested questions</Text>{STARTERS.map((starter) => <Pressable key={starter} onPress={() => void ask(starter)} disabled={loading} style={({ pressed }) => [styles.suggestion, pressed && styles.pressed]}><Text style={styles.suggestionText}>{starter}</Text><Text style={styles.arrow}>›</Text></Pressable>)}</View>}
 
         {result && <>
           <View style={styles.answerCard}>
@@ -127,5 +154,5 @@ export default function PortfolioCopilotScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe:{flex:1,backgroundColor:colors.background}, flex:{flex:1}, content:{padding:spacing.lg,paddingBottom:52,gap:spacing.lg}, loading:{flex:1,alignItems:'center',justifyContent:'center',gap:spacing.sm}, eyebrow:{color:colors.accent,fontSize:10,fontWeight:'900',letterSpacing:2}, title:{color:colors.text,fontSize:32,fontWeight:'900',marginTop:5}, subtitle:{color:colors.muted,fontSize:12,lineHeight:18,marginTop:7}, card:{backgroundColor:colors.surface,borderWidth:1,borderColor:colors.border,borderRadius:radius.lg,padding:spacing.md,gap:12}, label:{color:colors.muted,fontSize:11,fontWeight:'800'}, input:{minHeight:82,color:colors.text,fontSize:15,lineHeight:21,textAlignVertical:'top',paddingTop:8}, ask:{height:46,borderRadius:radius.md,backgroundColor:colors.accent,alignItems:'center',justifyContent:'center'}, askText:{color:colors.background,fontSize:13,fontWeight:'900'}, disabled:{opacity:0.45}, pressed:{opacity:0.72}, alert:{backgroundColor:colors.surfaceElevated,borderWidth:1,borderColor:colors.border,borderRadius:radius.md,padding:spacing.md,gap:6}, alertTitle:{color:colors.text,fontSize:13,fontWeight:'900'}, section:{gap:spacing.sm}, sectionTitle:{color:colors.text,fontSize:19,fontWeight:'900'}, suggestion:{backgroundColor:colors.surface,borderWidth:1,borderColor:colors.border,borderRadius:radius.md,padding:spacing.md,flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:12}, suggestionText:{color:colors.text,fontSize:12,lineHeight:18,flex:1}, arrow:{color:colors.accent,fontSize:24,fontWeight:'700'}, answerCard:{backgroundColor:colors.surface,borderWidth:1,borderColor:colors.accent,borderRadius:radius.lg,padding:spacing.lg,gap:14}, answerHeader:{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}, answerLabel:{color:colors.accent,fontSize:10,fontWeight:'900',letterSpacing:1.4}, chip:{backgroundColor:colors.accentSoft,borderRadius:radius.pill,paddingHorizontal:10,paddingVertical:6}, chipText:{color:colors.text,fontSize:9,fontWeight:'900'}, answer:{color:colors.text,fontSize:15,lineHeight:24}, citation:{color:colors.accent,fontWeight:'900'}, metaRow:{flexDirection:'row',justifyContent:'space-between',gap:10}, review:{backgroundColor:colors.surfaceElevated,borderRadius:radius.md,padding:spacing.md,gap:6}, reviewTitle:{color:colors.text,fontSize:12,fontWeight:'900'}, evidence:{flexDirection:'row',gap:10,paddingVertical:5}, evidenceIcon:{width:25,height:25,borderRadius:13,backgroundColor:colors.accentSoft,alignItems:'center',justifyContent:'center'}, evidenceIconText:{color:colors.accent,fontSize:11,fontWeight:'900'}, evidenceBody:{flex:1,gap:2}, evidenceTitle:{color:colors.text,fontSize:12,fontWeight:'900'}, evidenceValue:{color:colors.text,fontSize:12,lineHeight:17}, evidenceSource:{color:colors.muted,fontSize:9}, muted:{color:colors.muted,fontSize:11,lineHeight:17}, sync:{color:colors.muted,fontSize:9}, newQuestion:{alignItems:'center',paddingVertical:8}, newQuestionText:{color:colors.accent,fontSize:12,fontWeight:'900'}, memoryHeader:{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}, memoryCount:{color:colors.accent,fontSize:10,fontWeight:'900'}, memoryItem:{paddingVertical:6,gap:3}, memoryDate:{color:colors.muted,fontSize:9}, memoryQuestion:{color:colors.text,fontSize:11,lineHeight:16}, clearMemory:{borderTopWidth:1,borderColor:colors.border,paddingTop:10,marginTop:4,alignItems:'center'}, clearMemoryText:{color:colors.accent,fontSize:10,fontWeight:'900'}
+  safe:{flex:1,backgroundColor:colors.background}, flex:{flex:1}, content:{padding:spacing.lg,paddingBottom:52,gap:spacing.lg}, loading:{flex:1,alignItems:'center',justifyContent:'center',gap:spacing.sm}, eyebrow:{color:colors.accent,fontSize:10,fontWeight:'900',letterSpacing:2}, title:{color:colors.text,fontSize:32,fontWeight:'900',marginTop:5}, subtitle:{color:colors.muted,fontSize:12,lineHeight:18,marginTop:7}, card:{backgroundColor:colors.surface,borderWidth:1,borderColor:colors.border,borderRadius:radius.lg,padding:spacing.md,gap:12}, label:{color:colors.muted,fontSize:11,fontWeight:'800'}, input:{minHeight:82,color:colors.text,fontSize:15,lineHeight:21,textAlignVertical:'top',paddingTop:8}, ask:{minHeight:46,borderRadius:radius.md,backgroundColor:colors.accent,alignItems:'center',justifyContent:'center',paddingHorizontal:12}, askText:{color:colors.background,fontSize:13,fontWeight:'900'}, askLoading:{minHeight:46,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:9}, askLoadingText:{color:colors.background,fontSize:11,fontWeight:'800',flexShrink:1}, progressRow:{flexDirection:'row',gap:6,justifyContent:'center'}, progressDot:{width:28,height:3,borderRadius:2,backgroundColor:colors.border}, progressDotActive:{backgroundColor:colors.accent}, retry:{alignSelf:'flex-start',borderWidth:1,borderColor:colors.border,borderRadius:radius.pill,paddingHorizontal:12,paddingVertical:7}, retryText:{color:colors.accent,fontSize:10,fontWeight:'900'}, disabled:{opacity:0.45}, pressed:{opacity:0.72}, alert:{backgroundColor:colors.surfaceElevated,borderWidth:1,borderColor:colors.border,borderRadius:radius.md,padding:spacing.md,gap:8}, alertTitle:{color:colors.text,fontSize:13,fontWeight:'900'}, section:{gap:spacing.sm}, sectionTitle:{color:colors.text,fontSize:19,fontWeight:'900'}, suggestion:{backgroundColor:colors.surface,borderWidth:1,borderColor:colors.border,borderRadius:radius.md,padding:spacing.md,flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:12}, suggestionText:{color:colors.text,fontSize:12,lineHeight:18,flex:1}, arrow:{color:colors.accent,fontSize:24,fontWeight:'700'}, answerCard:{backgroundColor:colors.surface,borderWidth:1,borderColor:colors.accent,borderRadius:radius.lg,padding:spacing.lg,gap:14}, answerHeader:{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}, answerLabel:{color:colors.accent,fontSize:10,fontWeight:'900',letterSpacing:1.4}, chip:{backgroundColor:colors.accentSoft,borderRadius:radius.pill,paddingHorizontal:10,paddingVertical:6}, chipText:{color:colors.text,fontSize:9,fontWeight:'900'}, answer:{color:colors.text,fontSize:15,lineHeight:24}, citation:{color:colors.accent,fontWeight:'900'}, metaRow:{flexDirection:'row',justifyContent:'space-between',gap:10}, review:{backgroundColor:colors.surfaceElevated,borderRadius:radius.md,padding:spacing.md,gap:6}, reviewTitle:{color:colors.text,fontSize:12,fontWeight:'900'}, evidence:{flexDirection:'row',gap:10,paddingVertical:5}, evidenceIcon:{width:25,height:25,borderRadius:13,backgroundColor:colors.accentSoft,alignItems:'center',justifyContent:'center'}, evidenceIconText:{color:colors.accent,fontSize:11,fontWeight:'900'}, evidenceBody:{flex:1,gap:2}, evidenceTitle:{color:colors.text,fontSize:12,fontWeight:'900'}, evidenceValue:{color:colors.text,fontSize:12,lineHeight:17}, evidenceSource:{color:colors.muted,fontSize:9}, muted:{color:colors.muted,fontSize:11,lineHeight:17}, sync:{color:colors.muted,fontSize:9}, newQuestion:{alignItems:'center',paddingVertical:8}, newQuestionText:{color:colors.accent,fontSize:12,fontWeight:'900'}, memoryHeader:{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}, memoryCount:{color:colors.accent,fontSize:10,fontWeight:'900'}, memoryItem:{paddingVertical:6,gap:3}, memoryDate:{color:colors.muted,fontSize:9}, memoryQuestion:{color:colors.text,fontSize:11,lineHeight:16}, clearMemory:{borderTopWidth:1,borderColor:colors.border,paddingTop:10,marginTop:4,alignItems:'center'}, clearMemoryText:{color:colors.accent,fontSize:10,fontWeight:'900'}
 });
