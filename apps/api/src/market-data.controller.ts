@@ -37,6 +37,12 @@ export class MarketDataController {
     return this.marketData.listInstruments(country, type, parsedPage, parsedPageSize);
   }
 
+  @Get('stocks/:symbol/quote')
+  async stockQuote(@Param('symbol') symbol: string) {
+    if (!symbol.trim() || symbol.length > 40) throw new BadRequestException('symbol must be between 1 and 40 characters');
+    return this.marketData.quote(symbol);
+  }
+
   @Get('stocks/:symbol/history')
   async stockHistory(@Param('symbol') symbol: string, @Query('from') from?: string, @Query('to') to?: string): Promise<HistoricalResponse> {
     return this.marketData.history(symbol, from, to);
