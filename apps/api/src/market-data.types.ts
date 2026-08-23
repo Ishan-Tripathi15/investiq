@@ -48,3 +48,28 @@ export interface InstrumentCatalogResponse {
   available: boolean;
   message?: string;
 }
+
+export interface LiveQuote {
+  symbol: string;
+  name?: string;
+  exchange?: string;
+  currency?: string;
+  price: number;
+  previousClose?: number;
+  change?: number;
+  changePercent?: number;
+  open?: number;
+  high?: number;
+  low?: number;
+  volume?: number;
+  isMarketOpen?: boolean;
+  timestamp: string;
+  source: MarketSource | null;
+}
+
+export interface QuoteResponse {
+  symbol: string;
+  available: boolean;
+  quote: LiveQuote | null;
+  message?: string;
+}
