@@ -2,7 +2,7 @@ import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { MarketDataCache } from './market-data.cache';
 import { createMarketDataProvider, MarketDataProvider } from './market-data.provider';
 import { MarketDataRepository } from './market-data.repository';
-import { HistoricalResponse, InstrumentCatalogResponse, InstrumentSearchResponse } from './market-data.types';
+import { HistoricalResponse, InstrumentCatalogResponse, InstrumentSearchResponse, QuoteResponse } from './market-data.types';
 
 @Injectable()
 export class MarketDataService implements OnModuleInit, OnModuleDestroy {
@@ -30,6 +30,8 @@ export class MarketDataService implements OnModuleInit, OnModuleDestroy {
     }
     return response;
   }
+
+  async quote(symbol: string): Promise<QuoteResponse> { return this.provider.quote(symbol); }
 
   async searchInstruments(query: string, country = 'India'): Promise<InstrumentSearchResponse> { return this.provider.searchInstruments(query, country); }
 
