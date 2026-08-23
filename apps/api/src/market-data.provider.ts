@@ -1,9 +1,10 @@
-import { HistoricalPoint, HistoricalResponse, InstrumentCatalogResponse, InstrumentSearchResponse, MarketInstrument, MarketSource } from './market-data.types';
+import { HistoricalPoint, HistoricalResponse, InstrumentCatalogResponse, InstrumentSearchResponse, MarketInstrument, MarketSource, QuoteResponse } from './market-data.types';
 
 export interface MarketDataProvider {
   readonly name: string;
   health(): Promise<{ live: boolean; historical: boolean }>;
   stockHistory(symbol: string, from?: string, to?: string): Promise<HistoricalResponse>;
+  quote(symbol: string): Promise<QuoteResponse>;
   searchInstruments(query: string, country?: string): Promise<InstrumentSearchResponse>;
   listInstruments(country: string, type: string, page?: number, pageSize?: number): Promise<InstrumentCatalogResponse>;
 }
@@ -13,6 +14,9 @@ export class UnconfiguredMarketDataProvider implements MarketDataProvider {
   async health() { return { live: false, historical: false }; }
   async stockHistory(symbol: string): Promise<HistoricalResponse> {
     return { symbol: symbol.toUpperCase(), available: false, points: [], source: null, message: 'No verified market-data provider is configured.' };
+  }
+  async quote(symbol: string): Promise<QuoteResponse> {
+    return { symbol: symbol.toUpperCase(), available: false, quote: null, message: 'No verified live market-data provider is configured.' };
   }
   async searchInstruments(query: string): Promise<InstrumentSearchResponse> {
     return { query, instruments: [], source: null, available: false, message: 'No verified market-data provider is configured.' };
@@ -25,6 +29,7 @@ export class UnconfiguredMarketDataProvider implements MarketDataProvider {
 interface TwelveDataResponse { status?: string; message?: string; meta?: { symbol?: string }; values?: Array<{ datetime: string; open?: string; high?: string; low?: string; close: string; volume?: string }>; }
 interface TwelveDataInstrument { symbol?: string; name?: string; instrument_name?: string; currency?: string; exchange?: string; mic_code?: string; country?: string; type?: string; instrument_type?: string; }
 interface TwelveDataInstrumentResponse { status?: string; message?: string; count?: number; data?: TwelveDataInstrument[]; }
+interface TwelveDataQuoteResponse { status?: string; message?: string; symbol?: string; name?: string; exchange?: string; currency?: string; close?: string; previous_close?: string; change?: string; percent_change?: string; open?: string; high?: string; low?: string; volume?: string; is_market_open?: boolean; datetime?: string; }
 
 export class TwelveDataProvider implements MarketDataProvider {
   readonly name = 'twelve-data';
@@ -66,6 +71,22 @@ export class TwelveDataProvider implements MarketDataProvider {
     }
   }
 
+  async quote(symbol: string): Promise<QuoteResponse> {
+    const normalized = symbol.trim().toUpperCase();
+    if (!normalized) return { symbol: '', available: false, quote: null, message: 'A symbol is required.' };
+    if (!this.apiKey) return new UnconfiguredMarketDataProvider().quote(normalized);
+    try {
+      const body = await this.get<TwelveDataQuoteResponse>('/quote', { symbol: normalized });
+      if (body.status === 'error' || body.close == null) throw new Error(body.message ?? 'Market provider returned no live quote.');
+      const price = Number(body.close);
+      if (!Number.isFinite(price)) throw new Error('Market provider returned an invalid quote price.');
+      const source: MarketSource = { provider: this.name, retrievedAt: new Date().toISOString() };
+      return { symbol: body.symbol?.toUpperCase() ?? normalized, available: true, quote: { symbol: body.symbol?.toUpperCase() ?? normalized, name: body.name, exchange: body.exchange, currency: body.currency, price, previousClose: this.numberOrUndefined(body.previous_close), change: this.numberOrUndefined(body.change), changePercent: this.numberOrUndefined(body.percent_change), open: this.numberOrUndefined(body.open), high: this.numberOrUndefined(body.high), low: this.numberOrUndefined(body.low), volume: this.numberOrUndefined(body.volume), isMarketOpen: body.is_market_open, timestamp: body.datetime ? new Date(body.datetime).toISOString() : source.retrievedAt, source } };
+    } catch (error) {
+      return { symbol: normalized, available: false, quote: null, message: error instanceof Error ? error.message : 'Live quote request failed.' };
+    }
+  }
+
   private mapInstrument(row: TwelveDataInstrument): MarketInstrument | null {
     const symbol = row.symbol?.trim();
     const name = (row.instrument_name ?? row.name)?.trim();
@@ -95,6 +116,12 @@ export class TwelveDataProvider implements MarketDataProvider {
       const instruments = body.data.map((row) => this.mapInstrument(row)).filter((row): row is MarketInstrument => Boolean(row));
       return { country, type, page: safePage, pageSize: safeSize, instruments, available: true, source: { provider: this.name, retrievedAt: new Date().toISOString() } };
     } catch (error) { return { country, type, page: safePage, pageSize: safeSize, instruments: [], available: false, source: null, message: error instanceof Error ? error.message : 'Instrument catalog request failed.' }; }
+  }
+
+  private numberOrUndefined(value?: string): number | undefined {
+    if (value === undefined) return undefined;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
   }
 }
 
