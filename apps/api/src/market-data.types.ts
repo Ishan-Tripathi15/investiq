@@ -19,3 +19,32 @@ export interface HistoricalResponse {
   source: MarketSource | null;
   message?: string;
 }
+
+export interface MarketInstrument {
+  symbol: string;
+  name: string;
+  exchange: string;
+  micCode?: string;
+  country: string;
+  currency: string;
+  type: string;
+}
+
+export interface InstrumentSearchResponse {
+  query: string;
+  instruments: MarketInstrument[];
+  source: MarketSource | null;
+  available: boolean;
+  message?: string;
+}
+
+export interface InstrumentCatalogResponse {
+  country: string;
+  type: string;
+  page: number;
+  pageSize: number;
+  instruments: MarketInstrument[];
+  source: MarketSource | null;
+  available: boolean;
+  message?: string;
+}
