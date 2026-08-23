@@ -81,27 +81,7 @@ export class TwelveDataProvider implements MarketDataProvider {
       const price = Number(body.close);
       if (!Number.isFinite(price)) throw new Error('Market provider returned an invalid quote price.');
       const source: MarketSource = { provider: this.name, retrievedAt: new Date().toISOString() };
-      return {
-        symbol: body.symbol?.toUpperCase() ?? normalized,
-        available: true,
-        quote: {
-          symbol: body.symbol?.toUpperCase() ?? normalized,
-          name: body.name,
-          exchange: body.exchange,
-          currency: body.currency,
-          price,
-          previousClose: this.numberOrUndefined(body.previous_close),
-          change: this.numberOrUndefined(body.change),
-          changePercent: this.numberOrUndefined(body.percent_change),
-          open: this.numberOrUndefined(body.open),
-          high: this.numberOrUndefined(body.high),
-          low: this.numberOrUndefined(body.low),
-          volume: this.numberOrUndefined(body.volume),
-          isMarketOpen: body.is_market_open,
-          timestamp: body.datetime ? new Date(body.datetime).toISOString() : source.retrievedAt,
-          source,
-        },
-      };
+      return { symbol: body.symbol?.toUpperCase() ?? normalized, available: true, quote: { symbol: body.symbol?.toUpperCase() ?? normalized, name: body.name, exchange: body.exchange, currency: body.currency, price, previousClose: this.numberOrUndefined(body.previous_close), change: this.numberOrUndefined(body.change), changePercent: this.numberOrUndefined(body.percent_change), open: this.numberOrUndefined(body.open), high: this.numberOrUndefined(body.high), low: this.numberOrUndefined(body.low), volume: this.numberOrUndefined(body.volume), isMarketOpen: body.is_market_open, timestamp: body.datetime ? new Date(body.datetime).toISOString() : source.retrievedAt, source } };
     } catch (error) {
       return { symbol: normalized, available: false, quote: null, message: error instanceof Error ? error.message : 'Live quote request failed.' };
     }
@@ -136,6 +116,12 @@ export class TwelveDataProvider implements MarketDataProvider {
       const instruments = body.data.map((row) => this.mapInstrument(row)).filter((row): row is MarketInstrument => Boolean(row));
       return { country, type, page: safePage, pageSize: safeSize, instruments, available: true, source: { provider: this.name, retrievedAt: new Date().toISOString() } };
     } catch (error) { return { country, type, page: safePage, pageSize: safeSize, instruments: [], available: false, source: null, message: error instanceof Error ? error.message : 'Instrument catalog request failed.' }; }
+  }
+
+  private numberOrUndefined(value?: string): number | undefined {
+    if (value === undefined) return undefined;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
   }
 }
 
