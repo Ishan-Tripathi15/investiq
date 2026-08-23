@@ -27,7 +27,9 @@ function cleanText(value: unknown, field: string): string {
 
 function validateEvidenceIds(answer: string, context: PortfolioCopilotContext): string[] {
   const available = new Set(context.evidence.map((item) => item.id));
-  const ids = [...answer.matchAll(EVIDENCE_ID_PATTERN)].map((match) => match[1]).filter(Boolean);
+  const ids = [...answer.matchAll(EVIDENCE_ID_PATTERN)]
+    .map((match) => match[1])
+    .filter((id): id is string => typeof id === 'string' && id.length > 0);
   if (!ids.length) throw new Error('Copilot answer must cite at least one evidence identifier');
   const unique = [...new Set(ids)];
   const unsupported = unique.filter((id) => !available.has(id));
@@ -38,11 +40,12 @@ function validateEvidenceIds(answer: string, context: PortfolioCopilotContext): 
 function rejectUnsupportedNumericClaims(answer: string): void {
   const sentences = answer.split(/(?<=[.!?])\s+/).filter(Boolean);
   for (const sentence of sentences) {
+    EVIDENCE_ID_PATTERN.lastIndex = 0;
     if (/\b\d+(?:\.\d+)?\s*%?|₹\s*\d|\b\d+(?:\.\d+)?x\b/i.test(sentence) && !EVIDENCE_ID_PATTERN.test(sentence)) {
       throw new Error('Numeric claims must cite evidence in the same sentence');
     }
-    EVIDENCE_ID_PATTERN.lastIndex = 0;
   }
+  EVIDENCE_ID_PATTERN.lastIndex = 0;
 }
 
 export function validatePortfolioCopilotResponse(
@@ -58,8 +61,8 @@ export function validatePortfolioCopilotResponse(
   if (!['low', 'moderate', 'high', 'critical', 'unknown'].includes(String(riskLevel))) throw new Error('Invalid risk level');
   if (EXECUTION_PATTERNS.some((pattern) => pattern.test(answer))) throw new Error('Copilot response contains a trade execution instruction');
 
-  const evidenceIds = validateEvidenceIds(answer, context);
   rejectUnsupportedNumericClaims(answer);
+  const evidenceIds = validateEvidenceIds(answer, context);
 
   if (context.answerability === 'insufficient_data' && confidence === 'high') {
     throw new Error('High confidence is not allowed when portfolio data is insufficient');

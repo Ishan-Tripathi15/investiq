@@ -50,10 +50,12 @@ describe('KiteBrokerAdapter', () => {
     expect(order.id).toBe('KITE-123');
     expect(order.status).toBe('submitted');
     const request = fetchMock.mock.calls[0]?.[1] as RequestInit;
-    expect(request.headers).toMatchObject({ 'X-Kite-Version': '3' });
+    const headers = new Headers(request.headers);
+    expect(headers.get('X-Kite-Version')).toBe('3');
+    expect(headers.get('Content-Type')).toBe('application/x-www-form-urlencoded');
+    expect(headers.get('Authorization')).toBe(`token test-api-key:${token}`);
     expect(String(request.body)).toContain('tradingsymbol=RELIANCE');
     expect(String(request.body)).toContain('product=CNC');
     expect(String(request.body)).not.toContain(token);
-    expect(String(request.headers)).not.toContain(token);
   });
 });

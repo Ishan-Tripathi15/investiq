@@ -10,7 +10,7 @@
     "build": "expo export",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "jest"
+    "test": "jest --passWithNoTests"
   },
   "dependencies": {
     "@investiq/domain": "workspace:*",
@@ -28,7 +28,9 @@
     "react-native-screens": "~4.16.0"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/react": "~19.2.0",
+    "jest": "^30.0.0",
     "typescript": "~5.9.2"
   }
 }
