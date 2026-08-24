@@ -53,13 +53,15 @@ import { PortfolioMemoryRepository } from './portfolio-memory.repository';
 import { WatchlistController } from './watchlist.controller';
 import { WatchlistRepository } from './watchlist.repository';
 import { WatchlistService } from './watchlist.service';
+import { NewsController } from './news.controller';
+import { NewsService } from './news.service';
 
 @Controller('health')
 class HealthController { @Get() health() { return { status: 'ok', service: 'investiq-api', version: 'v1' }; } }
 
 @Module({
   imports: [ThrottlerModule.forRoot({ throttlers: [{ name: 'default', ttl: 60_000, limit: 120 }] })],
-  controllers: [HealthController, AuthController, MfaController, ProfileController, AiController, PortfolioIntelligenceController, PortfolioCopilotController, SecurityActivityController, SecurityNotificationsController, NotificationDeliveryController, MarketDataController, FundamentalsController, TradingController, TradingRiskController, BrokerConnectionController, WatchlistController],
+  controllers: [HealthController, AuthController, MfaController, ProfileController, AiController, PortfolioIntelligenceController, PortfolioCopilotController, SecurityActivityController, SecurityNotificationsController, NotificationDeliveryController, MarketDataController, FundamentalsController, TradingController, TradingRiskController, BrokerConnectionController, WatchlistController, NewsController],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_INTERCEPTOR, useClass: HttpObservabilityInterceptor },
@@ -72,7 +74,7 @@ class HealthController { @Get() health() { return { status: 'ok', service: 'inve
     TradingReconciliationService, TradingEventsService,
     BrokerConnectionRepository, BrokerConnectionService,
     TransactionAuthorizationRepository, TransactionAuthorizationService,
-    WatchlistRepository, WatchlistService,
+    WatchlistRepository, WatchlistService, NewsService,
   ],
 })
 export class AppModule implements NestModule {
