@@ -10,4 +10,9 @@ export class MutualFundsController {
     const parsedLimit = limit ? Number(limit) : undefined;
     return this.service.search(q.trim(), Number.isFinite(parsedLimit) ? parsedLimit : undefined);
   }
+
+  @Get('detail')
+  detail(@Query('schemeCode') schemeCode = '') {
+    return this.service.detail(schemeCode);
+  }
 }
