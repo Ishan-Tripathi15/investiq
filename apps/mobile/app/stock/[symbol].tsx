@@ -22,7 +22,50 @@ export default function StockDetailScreen() {
   const [detail, setDetail] = useState<Detail | null>(null); const [range, setRange] = useState<Range>('1M'); const [loading, setLoading] = useState(true); const [error, setError] = useState<string | null>(null); const [watched, setWatched] = useState(false); const [watchLoading, setWatchLoading] = useState(false); const [watchMessage, setWatchMessage] = useState<string | null>(null);
   async function load() { setLoading(true); setError(null); try { const response = await fetch(`${API_URL}/market-data/stocks/${encodeURIComponent(symbol)}`); const data = await response.json() as Detail; if (!response.ok || !data.available) throw new Error(data.message ?? 'Verified stock data is unavailable.'); setDetail(data); } catch (e) { setDetail(null); setError(e instanceof Error ? e.message : 'Unable to reach the InvestIQ API.'); } finally { setLoading(false); } }
   async function loadWatchState() { const token = await getAccessToken(); if (!token || !symbol) return; try { const response = await fetch(`${API_URL}/watchlist`, { headers: { Authorization: `Bearer ${token}` } }); if (response.ok) { const items = await response.json() as { symbol: string }[]; setWatched(items.some(item => item.symbol.toUpperCase() === symbol)); } } catch { /* Watchlist state is non-blocking. */ } }
-  async function toggleWatchlist() { const token = await getAccessToken(); if (!token) { setWatchMessage('Sign in to save a personal watchlist.'); return; } setWatchLoading(true); setWatchMessage(null); try { const response = await fetch(`${API_URL}/watchlist${watched ? `/${encodeURIComponent(symbol)}` : ''}`, { method: watched ? 'DELETE' : 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: watched ? undefined : JSON.stringify({ symbol }) }); if (!response.ok) { const data = await response.json().catch(() => ({})); throw new Error(data.message ?? 'Unable to update watchlist.'); } setWatched(!watched); } catch (e) { setWatchMessage(e instanceof Error ? e.message : 'Unable to update watchlist.'); } finally { setWatchLoading(false); } }
+  async function toggleWatchlist() {
+  const token = await getAccessToken();
+
+  if (!token) {
+    setWatchMessage('Sign in to save a personal watchlist.');
+    return;
+  }
+
+  setWatchLoading(true);
+  setWatchMessage(null);
+
+  try {
+    const url = `${API_URL}/watchlist${watched ? `/${encodeURIComponent(symbol)}` : ''}`;
+
+    const response = watched
+      ? await fetch(url, {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+      : await fetch(url, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ symbol }),
+        });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.message ?? 'Unable to update watchlist.');
+    }
+
+    setWatched(!watched);
+  } catch (e) {
+    setWatchMessage(
+      e instanceof Error ? e.message : 'Unable to update watchlist.'
+    );
+  } finally {
+    setWatchLoading(false);
+  }
+}
   useEffect(() => { if (symbol) { void load(); void loadWatchState(); } }, [symbol]);
   const quote = detail?.quote; const points = useMemo(() => detail?.history ?? [], [detail]); const chartPoints = useMemo(() => { if (points.length <= 70) return points; const step = Math.ceil(points.length / 70); return points.filter((_, i) => i % step === 0 || i === points.length - 1); }, [points]); const min = Math.min(...chartPoints.map(p => p.close), 0); const max = Math.max(...chartPoints.map(p => p.close), 1); const span = Math.max(max - min, 0.000001);
   return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
