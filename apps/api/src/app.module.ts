@@ -57,13 +57,15 @@ import { NewsController } from './news.controller';
 import { NewsService } from './news.service';
 import { MarketOverviewController } from './market-overview.controller';
 import { MarketOverviewService } from './market-overview.service';
+import { SectorController } from './sector.controller';
+import { SectorService } from './sector.service';
 
 @Controller('health')
 class HealthController { @Get() health() { return { status: 'ok', service: 'investiq-api', version: 'v1' }; } }
 
 @Module({
   imports: [ThrottlerModule.forRoot({ throttlers: [{ name: 'default', ttl: 60_000, limit: 120 }] })],
-  controllers: [HealthController, AuthController, MfaController, ProfileController, AiController, PortfolioIntelligenceController, PortfolioCopilotController, SecurityActivityController, SecurityNotificationsController, NotificationDeliveryController, MarketDataController, FundamentalsController, TradingController, TradingRiskController, BrokerConnectionController, WatchlistController, NewsController, MarketOverviewController],
+  controllers: [HealthController, AuthController, MfaController, ProfileController, AiController, PortfolioIntelligenceController, PortfolioCopilotController, SecurityActivityController, SecurityNotificationsController, NotificationDeliveryController, MarketDataController, FundamentalsController, TradingController, TradingRiskController, BrokerConnectionController, WatchlistController, NewsController, MarketOverviewController, SectorController],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_INTERCEPTOR, useClass: HttpObservabilityInterceptor },
@@ -76,7 +78,7 @@ class HealthController { @Get() health() { return { status: 'ok', service: 'inve
     TradingReconciliationService, TradingEventsService,
     BrokerConnectionRepository, BrokerConnectionService,
     TransactionAuthorizationRepository, TransactionAuthorizationService,
-    WatchlistRepository, WatchlistService, NewsService, MarketOverviewService,
+    WatchlistRepository, WatchlistService, NewsService, MarketOverviewService, SectorService,
   ],
 })
 export class AppModule implements NestModule {
