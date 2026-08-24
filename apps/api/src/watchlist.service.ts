@@ -9,8 +9,8 @@ export class WatchlistService {
   async add(userId: string, rawSymbol: string) {
     const symbol = rawSymbol.trim().toUpperCase();
     if (!/^[A-Z0-9._-]{1,32}$/.test(symbol)) throw new BadRequestException('Invalid stock symbol');
-    const instruments = await this.marketData.searchInstruments(symbol, 20);
-    const exact = instruments.find(item => item.symbol.toUpperCase() === symbol);
+    const instruments = await this.marketData.searchInstruments(symbol, 'India');
+    const exact = instruments.instruments.find(item => item.symbol.toUpperCase() === symbol);
     if (!exact) throw new BadRequestException('Instrument was not found in the verified market universe');
     return this.repository.add(userId, symbol);
   }
