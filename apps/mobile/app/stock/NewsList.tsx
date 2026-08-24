@@ -1,0 +1,26 @@
+import { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Linking, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { colors, radius, spacing } from '@/theme';
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000/api/v1';
+
+type Article = { id: string; title: string; description?: string; url: string; source: string; publishedAt: string; imageUrl?: string; symbol?: string; category: 'market' | 'company' | 'economy' | 'other' };
+type Response = { available: boolean; articles: Article[]; source: string | null; retrievedAt: string; message?: string };
+
+function relativeTime(value: string) { const diff = Math.max(0, Date.now() - new Date(value).getTime()); const minutes = Math.floor(diff / 60000); if (minutes < 60) return `${minutes}m ago`; const hours = Math.floor(minutes / 60); if (hours < 24) return `${hours}h ago`; return `${Math.floor(hours / 24)}d ago`; }
+
+export default function StockNews({ symbol }: { symbol: string }) {
+  const [data, setData] = useState<Response | null>(null); const [loading, setLoading] = useState(true); const [refreshing, setRefreshing] = useState(false); const [error, setError] = useState<string | null>(null);
+  const load = useCallback(async (refresh = false) => { if (refresh) setRefreshing(true); else setLoading(true); setError(null); try { const response = await fetch(`${API_URL}/news?q=${encodeURIComponent(symbol)}&limit=8`); const json = await response.json() as Response; if (!response.ok) throw new Error(json.message ?? 'Unable to load company news.'); setData(json); } catch (e) { setError(e instanceof Error ? e.message : 'Unable to load company news.'); } finally { setLoading(false); setRefreshing(false); } }, [symbol]);
+  useEffect(() => { void load(); }, [load]);
+  if (loading) return <View style={styles.state}><ActivityIndicator color={colors.accent}/><Text style={styles.muted}>Loading latest {symbol} news…</Text></View>;
+  if (error) return <View style={styles.state}><Text style={styles.stateTitle}>News unavailable</Text><Text style={styles.muted}>{error}</Text><TouchableOpacity onPress={() => void load()} style={styles.retry}><Text style={styles.retryText}>Retry</Text></TouchableOpacity></View>;
+  const articles = data?.articles ?? [];
+  return <View style={styles.wrap}><View style={styles.header}><View><Text style={styles.title}>Latest News</Text><Text style={styles.muted}>{articles.length ? `${articles.length} verified articles` : 'No verified company news available'}</Text></View><Text style={styles.source}>{data?.source ?? 'Provider pending'}</Text></View>
+    <View refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void load(true)} />}>
+      {articles.map(article => <TouchableOpacity key={article.id} style={styles.article} onPress={() => void Linking.openURL(article.url)} activeOpacity={0.8}><View style={styles.articleBody}><Text style={styles.articleTitle}>{article.title}</Text>{article.description ? <Text style={styles.description} numberOfLines={2}>{article.description}</Text> : null}<View style={styles.meta}><Text style={styles.metaText}>{article.source}</Text><Text style={styles.metaText}>·</Text><Text style={styles.metaText}>{relativeTime(article.publishedAt)}</Text></View></View><Text style={styles.arrow}>↗</Text></TouchableOpacity>)}
+      {!articles.length ? <View style={styles.empty}><Text style={styles.emptyTitle}>No verified news yet</Text><Text style={styles.muted}>{data?.message ?? 'The news provider did not return matching articles.'}</Text></View> : null}
+    </View>
+  </View>;
+}
+const styles=StyleSheet.create({wrap:{gap:spacing.md},header:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},title:{color:colors.text,fontSize:19,fontWeight:'900'},source:{color:colors.accent,fontSize:8,fontWeight:'900'},muted:{color:colors.muted,fontSize:10,lineHeight:16},article:{backgroundColor:colors.surface,borderWidth:1,borderColor:colors.border,borderRadius:radius.md,padding:spacing.md,flexDirection:'row',gap:10,marginBottom:spacing.sm},articleBody:{flex:1},articleTitle:{color:colors.text,fontSize:13,fontWeight:'900',lineHeight:18},description:{color:colors.muted,fontSize:10,lineHeight:15,marginTop:5},meta:{flexDirection:'row',gap:6,marginTop:8},metaText:{color:colors.muted,fontSize:8,fontWeight:'800'},arrow:{color:colors.accent,fontSize:18,fontWeight:'900'},state:{padding:spacing.lg,alignItems:'center',gap:10,backgroundColor:colors.surface,borderWidth:1,borderColor:colors.border,borderRadius:radius.md},stateTitle:{color:colors.text,fontSize:14,fontWeight:'900'},retry:{backgroundColor:colors.accent,paddingHorizontal:16,paddingVertical:9,borderRadius:radius.sm},retryText:{color:colors.background,fontSize:10,fontWeight:'900'},empty:{padding:spacing.lg,backgroundColor:colors.surface,borderRadius:radius.md,borderWidth:1,borderColor:colors.border,gap:5},emptyTitle:{color:colors.text,fontSize:13,fontWeight:'900'}});
