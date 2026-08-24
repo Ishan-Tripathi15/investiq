@@ -28,3 +28,10 @@ export interface FundSchemeSearchResponse {
   source: { provider: string; retrievedAt: string } | null;
   message?: string;
 }
+
+export interface FundDetailResponse {
+  available: boolean;
+  scheme: FundScheme | null;
+  source: { provider: string; retrievedAt: string } | null;
+  message?: string;
+}
