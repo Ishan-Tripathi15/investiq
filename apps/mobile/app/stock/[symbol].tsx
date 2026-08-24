@@ -4,6 +4,7 @@ import { Link, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, radius, spacing } from '@/theme';
 import { getAccessToken } from '@/auth';
+import StockNews from './NewsList';
 
 type Point = { timestamp: string; close: number; volume?: number };
 type Instrument = { symbol: string; name: string; exchange: string; micCode?: string; country: string; currency: string; type: string };
@@ -22,50 +23,7 @@ export default function StockDetailScreen() {
   const [detail, setDetail] = useState<Detail | null>(null); const [range, setRange] = useState<Range>('1M'); const [loading, setLoading] = useState(true); const [error, setError] = useState<string | null>(null); const [watched, setWatched] = useState(false); const [watchLoading, setWatchLoading] = useState(false); const [watchMessage, setWatchMessage] = useState<string | null>(null);
   async function load() { setLoading(true); setError(null); try { const response = await fetch(`${API_URL}/market-data/stocks/${encodeURIComponent(symbol)}`); const data = await response.json() as Detail; if (!response.ok || !data.available) throw new Error(data.message ?? 'Verified stock data is unavailable.'); setDetail(data); } catch (e) { setDetail(null); setError(e instanceof Error ? e.message : 'Unable to reach the InvestIQ API.'); } finally { setLoading(false); } }
   async function loadWatchState() { const token = await getAccessToken(); if (!token || !symbol) return; try { const response = await fetch(`${API_URL}/watchlist`, { headers: { Authorization: `Bearer ${token}` } }); if (response.ok) { const items = await response.json() as { symbol: string }[]; setWatched(items.some(item => item.symbol.toUpperCase() === symbol)); } } catch { /* Watchlist state is non-blocking. */ } }
-  async function toggleWatchlist() {
-  const token = await getAccessToken();
-
-  if (!token) {
-    setWatchMessage('Sign in to save a personal watchlist.');
-    return;
-  }
-
-  setWatchLoading(true);
-  setWatchMessage(null);
-
-  try {
-    const url = `${API_URL}/watchlist${watched ? `/${encodeURIComponent(symbol)}` : ''}`;
-
-    const response = watched
-      ? await fetch(url, {
-          method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        })
-      : await fetch(url, {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ symbol }),
-        });
-
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      throw new Error(data.message ?? 'Unable to update watchlist.');
-    }
-
-    setWatched(!watched);
-  } catch (e) {
-    setWatchMessage(
-      e instanceof Error ? e.message : 'Unable to update watchlist.'
-    );
-  } finally {
-    setWatchLoading(false);
-  }
-}
+  async function toggleWatchlist() { const token = await getAccessToken(); if (!token) { setWatchMessage('Sign in to save a personal watchlist.'); return; } setWatchLoading(true); setWatchMessage(null); try { const url = `${API_URL}/watchlist${watched ? `/${encodeURIComponent(symbol)}` : ''}`; const response = watched ? await fetch(url, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }) : await fetch(url, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ symbol }) }); if (!response.ok) { const data = await response.json().catch(() => ({})); throw new Error(data.message ?? 'Unable to update watchlist.'); } setWatched(!watched); } catch (e) { setWatchMessage(e instanceof Error ? e.message : 'Unable to update watchlist.'); } finally { setWatchLoading(false); } }
   useEffect(() => { if (symbol) { void load(); void loadWatchState(); } }, [symbol]);
   const quote = detail?.quote; const points = useMemo(() => detail?.history ?? [], [detail]); const chartPoints = useMemo(() => { if (points.length <= 70) return points; const step = Math.ceil(points.length / 70); return points.filter((_, i) => i % step === 0 || i === points.length - 1); }, [points]); const min = Math.min(...chartPoints.map(p => p.close), 0); const max = Math.max(...chartPoints.map(p => p.close), 1); const span = Math.max(max - min, 0.000001);
   return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -80,7 +38,8 @@ export default function StockDetailScreen() {
         <View style={styles.ranges}>{ranges.map(r=><TouchableOpacity key={r} onPress={()=>setRange(r)} style={[styles.range,range===r&&styles.rangeActive]}><Text style={[styles.rangeText,range===r&&styles.rangeTextActive]}>{r}</Text></TouchableOpacity>)}</View>
       </View>
       <Text style={styles.section}>Market stats</Text><View style={styles.grid}>{[['Open',money(quote?.open,quote?.currency)],['Previous close',money(quote?.previousClose,quote?.currency)],['Day high',money(quote?.high,quote?.currency)],['Day low',money(quote?.low,quote?.currency)],['Volume',quote?.volume?.toLocaleString('en-IN') ?? '—'],['Exchange',detail?.instrument?.exchange ?? quote?.exchange ?? '—']].map(([label,value])=><View key={label} style={styles.stat}><Text style={styles.muted}>{label}</Text><Text style={styles.statValue}>{value}</Text></View>)}</View>
-      <View style={styles.feature}><Text style={styles.featureTitle}>More coming into this stock page</Text><Text style={styles.featureText}>📰 Live financial news · 🧠 AI research · ⭐ Watchlist alerts · 💰 Buy / Sell</Text><Text style={styles.featureSub}>These modules will connect to verified providers and the existing trading authorization flow.</Text></View>
+      <StockNews symbol={symbol} />
+      <View style={styles.feature}><Text style={styles.featureTitle}>More coming into this stock page</Text><Text style={styles.featureText}>🧠 AI research · ⭐ Watchlist alerts · 💰 Buy / Sell</Text><Text style={styles.featureSub}>These modules will connect to verified providers and the existing trading authorization flow.</Text></View>
       <Text style={styles.disclaimer}>Market prices and history are shown only when supplied by a verified provider. Nothing on this screen is a fabricated or guaranteed market value.</Text>
     </>}
   </ScrollView></SafeAreaView>;
