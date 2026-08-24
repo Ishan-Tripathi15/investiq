@@ -9,6 +9,8 @@ import { MarketDataRepository } from './market-data.repository';
 import { MarketDataService } from './market-data.service';
 import { MutualFundsService } from './mutual-funds.service';
 import { MutualFundsController } from './mutual-funds.controller';
+import { MutualFundAnalyticsController } from './mutual-fund-analytics.controller';
+import { MutualFundAnalyticsService } from './mutual-fund-analytics.service';
 import { FundamentalsController } from './fundamentals.controller';
 import { FundamentalsService } from './fundamentals.service';
 import { HistoricalValuationService } from './historical-valuation.service';
@@ -66,7 +68,7 @@ class HealthController { @Get() health() { return { status: 'ok', service: 'inve
 
 @Module({
   imports: [ThrottlerModule.forRoot({ throttlers: [{ name: 'default', ttl: 60_000, limit: 120 }] })],
-  controllers: [HealthController, AuthController, MfaController, ProfileController, AiController, PortfolioIntelligenceController, PortfolioCopilotController, SecurityActivityController, SecurityNotificationsController, NotificationDeliveryController, MarketDataController, FundamentalsController, TradingController, TradingRiskController, BrokerConnectionController, WatchlistController, NewsController, MarketOverviewController, SectorController, MutualFundsController],
+  controllers: [HealthController, AuthController, MfaController, ProfileController, AiController, PortfolioIntelligenceController, PortfolioCopilotController, SecurityActivityController, SecurityNotificationsController, NotificationDeliveryController, MarketDataController, FundamentalsController, TradingController, TradingRiskController, BrokerConnectionController, WatchlistController, NewsController, MarketOverviewController, SectorController, MutualFundsController, MutualFundAnalyticsController],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_INTERCEPTOR, useClass: HttpObservabilityInterceptor },
@@ -74,7 +76,7 @@ class HealthController { @Get() health() { return { status: 'ok', service: 'inve
     SecurityActivityRepository, SecurityActivityService, SecurityNotificationsRepository, SecurityNotificationsService,
     NotificationDeliveryRepository, NotificationDeliveryService, AiService,
     PortfolioIntelligenceService, PortfolioMemoryRepository,
-    MarketDataService, MarketDataRepository, MarketDataCache, MutualFundsService, FundamentalsService,
+    MarketDataService, MarketDataRepository, MarketDataCache, MutualFundsService, MutualFundAnalyticsService, FundamentalsService,
     HistoricalValuationService, TradingRepository, TradingRiskService, TradingService,
     TradingReconciliationService, TradingEventsService,
     BrokerConnectionRepository, BrokerConnectionService,
