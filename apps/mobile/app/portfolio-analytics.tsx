@@ -13,8 +13,9 @@ const money=(v:number)=>`₹${Math.round(v).toLocaleString('en-IN')}`;
 function analytics(points:Point[]){
  const ordered=points.filter(x=>x.date&&Number.isFinite(x.value)&&x.value!>=0).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
  if(ordered.length<2)return {tw:null,annual:null,drawdown:null,start:null,end:null};
- const start=ordered[0].value!; const end=ordered.at(-1)!.value!;
- const startMs=new Date(ordered[0].date!).getTime(); const endMs=new Date(ordered.at(-1)!.date!).getTime();
+ const first=ordered[0]; const last=ordered.at(-1)!;
+ const start=first.value!; const end=last.value!;
+ const startMs=new Date(first.date!).getTime(); const endMs=new Date(last.date!).getTime();
  const years=(endMs-startMs)/(365.25*24*60*60*1000);
  let peak=start; let worst=0;
  for(const p of ordered){peak=Math.max(peak,p.value!);if(peak>0)worst=Math.min(worst,p.value!/peak-1)}
