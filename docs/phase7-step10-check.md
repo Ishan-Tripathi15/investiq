@@ -1,1 +1,0 @@
-Portfolio Analytics UI consumes verified broker history. Missing history remains unavailable.
