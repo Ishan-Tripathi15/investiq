@@ -15,7 +15,7 @@ function otp(value: unknown): string { if (typeof value !== 'string' || !/^\d{6}
 
 @Controller('trading')
 export class TradingController {
-  constructor(private readonly trading: TradingService, private readonly reconciliation: TradingReconciliationService, private readonly events: TradingEventsService, private readonly transactionAuthorization: TransactionAuthorizationService, private readonly portfolioHistory: PortfolioHistoryService) {}
+  constructor(private readonly trading: TradingService, private readonly reconciliation: TradingReconciliationService, private readonly events: TradingEventsService, private readonly transactionAuthorization: TransactionAuthorizationService, private readonly portfolioHistoryService: PortfolioHistoryService) {}
   @Get('status') status() { return this.trading.status(); }
   @Get('capabilities') capabilities() { return this.trading.capabilities(); }
   @Get('quote') quote(@Query('symbol') symbol?: string) { if (!symbol?.trim()) throw new BadRequestException('symbol query parameter is required'); return this.trading.quote(symbol); }
@@ -40,7 +40,7 @@ export class TradingController {
   @UseGuards(AuthGuard, PermissionGuard('portfolio:read'))
   @Get('positions') positions(@Req() req: AuthenticatedRequest) { return this.trading.positions(req.user!.id); }
   @UseGuards(AuthGuard, PermissionGuard('portfolio:read'))
-  @Get('portfolio/history') portfolioHistory(@Req() req: AuthenticatedRequest, @Query('days') days?: string) { return this.portfolioHistory.get(req.user!.id, Number(days ?? 365)); }
+  @Get('portfolio/history') portfolioHistory(@Req() req: AuthenticatedRequest, @Query('days') days?: string) { return this.portfolioHistoryService.get(req.user!.id, Number(days ?? 365)); }
   @UseGuards(AuthGuard, PermissionGuard('account:read'))
   @Get('account') account(@Req() req: AuthenticatedRequest) { return this.trading.account(req.user!.id); }
   @UseGuards(AuthGuard, PermissionGuard('account:read'))
