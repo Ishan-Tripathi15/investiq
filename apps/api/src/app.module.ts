@@ -16,6 +16,8 @@ import { MutualFundComparisonService } from './mutual-fund-comparison.service';
 import { MutualFundWatchlistController } from './mutual-fund-watchlist.controller';
 import { MutualFundWatchlistRepository } from './mutual-fund-watchlist.repository';
 import { MutualFundWatchlistService } from './mutual-fund-watchlist.service';
+import { MutualFundIntelligenceController } from './mutual-fund-intelligence.controller';
+import { MutualFundIntelligenceService } from './mutual-fund-intelligence.service';
 import { FundamentalsController } from './fundamentals.controller';
 import { FundamentalsService } from './fundamentals.service';
 import { FundamentalIntelligenceController } from './fundamental-intelligence.controller';
@@ -81,7 +83,7 @@ class HealthController { @Get() health() { return { status: 'ok', service: 'inve
 
 @Module({
   imports: [ThrottlerModule.forRoot({ throttlers: [{ name: 'default', ttl: 60_000, limit: 120 }] })],
-  controllers: [HealthController, AuthController, MfaController, ProfileController, AiController, PortfolioIntelligenceController, PortfolioCopilotController, SecurityActivityController, SecurityNotificationsController, NotificationDeliveryController, MarketDataController, FundamentalsController, FundamentalIntelligenceController, TradingController, TradingRiskController, BrokerConnectionController, WatchlistController, NewsController, NewsAlertsController, MarketOverviewController, SectorController, MutualFundsController, MutualFundAnalyticsController, MutualFundComparisonController, MutualFundWatchlistController],
+  controllers: [HealthController, AuthController, MfaController, ProfileController, AiController, PortfolioIntelligenceController, PortfolioCopilotController, SecurityActivityController, SecurityNotificationsController, NotificationDeliveryController, MarketDataController, FundamentalsController, FundamentalIntelligenceController, TradingController, TradingRiskController, BrokerConnectionController, WatchlistController, NewsController, NewsAlertsController, MarketOverviewController, SectorController, MutualFundsController, MutualFundAnalyticsController, MutualFundComparisonController, MutualFundWatchlistController, MutualFundIntelligenceController],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_INTERCEPTOR, useClass: HttpObservabilityInterceptor },
@@ -89,7 +91,7 @@ class HealthController { @Get() health() { return { status: 'ok', service: 'inve
     SecurityActivityRepository, SecurityActivityService, SecurityNotificationsRepository, SecurityNotificationsService,
     NotificationDeliveryRepository, NotificationDeliveryService, AiService,
     PortfolioIntelligenceService, PortfolioMemoryRepository,
-    MarketDataService, MarketDataRepository, MarketDataCache, MutualFundsService, MutualFundAnalyticsService, MutualFundComparisonService, MutualFundWatchlistRepository, MutualFundWatchlistService, FundamentalsService, FundamentalIntelligenceService,
+    MarketDataService, MarketDataRepository, MarketDataCache, MutualFundsService, MutualFundAnalyticsService, MutualFundComparisonService, MutualFundWatchlistRepository, MutualFundWatchlistService, MutualFundIntelligenceService, FundamentalsService, FundamentalIntelligenceService,
     HistoricalValuationService, TradingRepository, TradingRiskService, TradingService,
     TradingReconciliationService, TradingEventsService,
     BrokerConnectionRepository, BrokerConnectionService,
