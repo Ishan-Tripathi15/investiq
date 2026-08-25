@@ -14,7 +14,7 @@ export interface NewsArticle {
   imageUrl?: string;
   symbol?: string;
   category: 'market' | 'company' | 'economy' | 'other';
-  sentiment: NewsSentiment;
+  sentiment?: NewsSentiment;
 }
 
 export interface NewsResponse {
