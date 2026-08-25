@@ -1,0 +1,1 @@
+Verified broker history powers portfolio return, annualized return and drawdown calculations.
