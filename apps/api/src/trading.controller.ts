@@ -9,13 +9,14 @@ import { TradingService } from './trading.service';
 import { TradingReconciliationService } from './trading-reconciliation.service';
 import { TransactionAuthorizationService } from './transaction-authorization.service';
 import { PortfolioHistoryService } from './portfolio-history.service';
+import { PortfolioAnalyticsService } from './portfolio-analytics.service';
 
 interface TransactionVerificationBody { otp?: unknown; }
 function otp(value: unknown): string { if (typeof value !== 'string' || !/^\d{6}$/.test(value)) throw new BadRequestException('otp must be a 6-digit code'); return value; }
 
 @Controller('trading')
 export class TradingController {
-  constructor(private readonly trading: TradingService, private readonly reconciliation: TradingReconciliationService, private readonly events: TradingEventsService, private readonly transactionAuthorization: TransactionAuthorizationService, private readonly portfolioHistoryService: PortfolioHistoryService) {}
+  constructor(private readonly trading: TradingService, private readonly reconciliation: TradingReconciliationService, private readonly events: TradingEventsService, private readonly transactionAuthorization: TransactionAuthorizationService, private readonly portfolioHistoryService: PortfolioHistoryService, private readonly analytics: PortfolioAnalyticsService) {}
   @Get('status') status() { return this.trading.status(); }
   @Get('capabilities') capabilities() { return this.trading.capabilities(); }
   @Get('quote') quote(@Query('symbol') symbol?: string) { if (!symbol?.trim()) throw new BadRequestException('symbol query parameter is required'); return this.trading.quote(symbol); }
@@ -41,6 +42,20 @@ export class TradingController {
   @Get('positions') positions(@Req() req: AuthenticatedRequest) { return this.trading.positions(req.user!.id); }
   @UseGuards(AuthGuard, PermissionGuard('portfolio:read'))
   @Get('portfolio/history') portfolioHistory(@Req() req: AuthenticatedRequest, @Query('days') days?: string) { return this.portfolioHistoryService.get(req.user!.id, Number(days ?? 365)); }
+  @UseGuards(AuthGuard, PermissionGuard('portfolio:read'))
+  @Get('portfolio/analytics') async portfolioAnalytics(@Req() req: AuthenticatedRequest, @Query('days') days?: string) {
+    const history = await this.portfolioHistoryService.get(req.user!.id, Number(days ?? 365));
+    const observations = history.history.map((point) => ({ date: point.date, value: point.value }));
+    return {
+      connected: history.connected,
+      source: history.source ?? 'verified-broker-account-equity',
+      observations: observations.length,
+      timeWeightedReturn: this.analytics.timeWeightedReturn(observations),
+      annualizedReturn: this.analytics.annualizedReturn(observations),
+      maxDrawdown: this.analytics.maxDrawdown(observations),
+      message: observations.length < 2 ? 'At least two verified portfolio observations are required for performance analytics.' : undefined,
+    };
+  }
   @UseGuards(AuthGuard, PermissionGuard('account:read'))
   @Get('account') account(@Req() req: AuthenticatedRequest) { return this.trading.account(req.user!.id); }
   @UseGuards(AuthGuard, PermissionGuard('account:read'))
