@@ -10,13 +10,14 @@ import { TradingReconciliationService } from './trading-reconciliation.service';
 import { TransactionAuthorizationService } from './transaction-authorization.service';
 import { PortfolioHistoryService } from './portfolio-history.service';
 import { PortfolioAnalyticsService } from './portfolio-analytics.service';
+import { MarketDataService } from './market-data.service';
 
 interface TransactionVerificationBody { otp?: unknown; }
 function otp(value: unknown): string { if (typeof value !== 'string' || !/^\d{6}$/.test(value)) throw new BadRequestException('otp must be a 6-digit code'); return value; }
 
 @Controller('trading')
 export class TradingController {
-  constructor(private readonly trading: TradingService, private readonly reconciliation: TradingReconciliationService, private readonly events: TradingEventsService, private readonly transactionAuthorization: TransactionAuthorizationService, private readonly portfolioHistoryService: PortfolioHistoryService, private readonly analytics: PortfolioAnalyticsService) {}
+  constructor(private readonly trading: TradingService, private readonly reconciliation: TradingReconciliationService, private readonly events: TradingEventsService, private readonly transactionAuthorization: TransactionAuthorizationService, private readonly portfolioHistoryService: PortfolioHistoryService, private readonly analytics: PortfolioAnalyticsService, private readonly marketData: MarketDataService) {}
   @Get('status') status() { return this.trading.status(); }
   @Get('capabilities') capabilities() { return this.trading.capabilities(); }
   @Get('quote') quote(@Query('symbol') symbol?: string) { if (!symbol?.trim()) throw new BadRequestException('symbol query parameter is required'); return this.trading.quote(symbol); }
@@ -55,6 +56,22 @@ export class TradingController {
       maxDrawdown: this.analytics.maxDrawdown(observations),
       message: observations.length < 2 ? 'At least two verified portfolio observations are required for performance analytics.' : undefined,
     };
+  }
+  @UseGuards(AuthGuard, PermissionGuard('portfolio:read'))
+  @Get('portfolio/benchmark') async portfolioBenchmark(@Req() req: AuthenticatedRequest, @Query('symbol') symbol?: string, @Query('days') days?: string) {
+    const benchmarkSymbol = symbol?.trim();
+    if (!benchmarkSymbol) throw new BadRequestException('symbol query parameter is required');
+    if (benchmarkSymbol.length > 40) throw new BadRequestException('symbol must be between 1 and 40 characters');
+    const history = await this.portfolioHistoryService.get(req.user!.id, Number(days ?? 365));
+    const observations = history.history.map((point) => ({ date: point.date, value: point.value }));
+    if (observations.length < 2) return { connected: history.connected, benchmark: benchmarkSymbol, available: false, benchmarkReturn: null, relativeReturn: null, message: 'At least two verified portfolio observations are required for benchmark comparison.' };
+    const from = observations[0].date;
+    const to = observations[observations.length - 1].date;
+    const benchmark = await this.marketData.history(benchmarkSymbol, from, to);
+    const benchmarkObservations = benchmark.points.map((point) => ({ date: point.timestamp, value: point.close }));
+    const benchmarkReturn = this.analytics.benchmarkReturn(benchmarkObservations);
+    const relativeReturn = this.analytics.relativeReturn(observations, benchmarkObservations);
+    return { connected: history.connected, benchmark: benchmarkSymbol, available: benchmark.available && benchmarkReturn != null, source: benchmark.source, observations: benchmarkObservations.length, benchmarkReturn, portfolioReturn: this.analytics.timeWeightedReturn(observations), relativeReturn, message: benchmarkReturn == null ? (benchmark.message ?? 'Verified benchmark history is insufficient for comparison.') : undefined };
   }
   @UseGuards(AuthGuard, PermissionGuard('account:read'))
   @Get('account') account(@Req() req: AuthenticatedRequest) { return this.trading.account(req.user!.id); }
