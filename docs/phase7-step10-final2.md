@@ -1,1 +1,0 @@
-Verified analytics integration checkpoint.
