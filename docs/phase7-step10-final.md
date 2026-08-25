@@ -1,1 +1,0 @@
-Phase 7.10 connects the portfolio analytics screen to verified broker portfolio history. It calculates total return, annualized return and maximum observed drawdown only when sufficient verified observations exist.
