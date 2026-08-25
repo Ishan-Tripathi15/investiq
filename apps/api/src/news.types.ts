@@ -1,3 +1,9 @@
+export interface NewsSentiment {
+  label: 'positive' | 'neutral' | 'negative';
+  score: number;
+  confidence: 'low' | 'medium' | 'high';
+}
+
 export interface NewsArticle {
   id: string;
   title: string;
@@ -8,6 +14,7 @@ export interface NewsArticle {
   imageUrl?: string;
   symbol?: string;
   category: 'market' | 'company' | 'economy' | 'other';
+  sentiment: NewsSentiment;
 }
 
 export interface NewsResponse {
