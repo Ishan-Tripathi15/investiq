@@ -41,4 +41,20 @@ export class PortfolioAnalyticsService {
     if (!(years > 0)) return null;
     return Math.pow(last.value / first.value, 1 / years) - 1;
   }
+
+  benchmarkReturn(observations: Observation[]): number | null {
+    const ordered = this.validObservations(observations);
+    if (ordered.length < 2) return null;
+    const first = ordered[0].value;
+    const last = ordered[ordered.length - 1].value;
+    if (!(first > 0) || !(last > 0)) return null;
+    return last / first - 1;
+  }
+
+  relativeReturn(portfolioObservations: Observation[], benchmarkObservations: Observation[]): number | null {
+    const portfolio = this.timeWeightedReturn(portfolioObservations);
+    const benchmark = this.benchmarkReturn(benchmarkObservations);
+    if (portfolio == null || benchmark == null) return null;
+    return portfolio - benchmark;
+  }
 }
