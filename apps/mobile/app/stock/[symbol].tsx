@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, radius, spacing } from '@/theme';
 import { getAccessToken } from '@/auth';
 import StockNews from './NewsList';
+import FundamentalsCard from './FundamentalsCard';
 
 type Point = { timestamp: string; close: number; volume?: number };
 type Instrument = { symbol: string; name: string; exchange: string; micCode?: string; country: string; currency: string; type: string };
@@ -38,6 +39,7 @@ export default function StockDetailScreen() {
         <View style={styles.ranges}>{ranges.map(r=><TouchableOpacity key={r} onPress={()=>setRange(r)} style={[styles.range,range===r&&styles.rangeActive]}><Text style={[styles.rangeText,range===r&&styles.rangeTextActive]}>{r}</Text></TouchableOpacity>)}</View>
       </View>
       <Text style={styles.section}>Market stats</Text><View style={styles.grid}>{[['Open',money(quote?.open,quote?.currency)],['Previous close',money(quote?.previousClose,quote?.currency)],['Day high',money(quote?.high,quote?.currency)],['Day low',money(quote?.low,quote?.currency)],['Volume',quote?.volume?.toLocaleString('en-IN') ?? '—'],['Exchange',detail?.instrument?.exchange ?? quote?.exchange ?? '—']].map(([label,value])=><View key={label} style={styles.stat}><Text style={styles.muted}>{label}</Text><Text style={styles.statValue}>{value}</Text></View>)}</View>
+      <FundamentalsCard symbol={symbol} />
       <StockNews symbol={symbol} />
       <View style={styles.feature}><Text style={styles.featureTitle}>More coming into this stock page</Text><Text style={styles.featureText}>🧠 AI research · ⭐ Watchlist alerts · 💰 Buy / Sell</Text><Text style={styles.featureSub}>These modules will connect to verified providers and the existing trading authorization flow.</Text></View>
       <Text style={styles.disclaimer}>Market prices and history are shown only when supplied by a verified provider. Nothing on this screen is a fabricated or guaranteed market value.</Text>
