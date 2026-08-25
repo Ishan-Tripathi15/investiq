@@ -1,44 +1,30 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getAccessToken } from '@/auth';
 import { colors, radius, spacing } from '@/theme';
 
 const API_URL=process.env.EXPO_PUBLIC_API_URL??'http://localhost:3000/api/v1';
-type Point={date?:string;value?:number};
-type Data={connected?:boolean;history?:Point[];message?:string};
-const pct=(v:number|null)=>v==null?'—':`${(v*100).toFixed(2)}%`;
-const money=(v:number)=>`₹${Math.round(v).toLocaleString('en-IN')}`;
-
-function analytics(points:Point[]){
- const ordered=points.filter(x=>x.date&&Number.isFinite(x.value)&&x.value!>=0).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
- if(ordered.length<2)return {tw:null,annual:null,drawdown:null,start:null,end:null};
- const first=ordered[0];
- if(!first)return {tw:null,annual:null,drawdown:null,start:null,end:null};
- const last=ordered.at(-1);
- if(!last)return {tw:null,annual:null,drawdown:null,start:null,end:null};
- const start=first.value!; const end=last.value!;
- const startMs=new Date(first.date!).getTime(); const endMs=new Date(last.date!).getTime();
- const years=(endMs-startMs)/(365.25*24*60*60*1000);
- let peak=start; let worst=0;
- for(const p of ordered){peak=Math.max(peak,p.value!);if(peak>0)worst=Math.min(worst,p.value!/peak-1)}
- return {tw:start>0?end/start-1:null,annual:years>0&&start>0?Math.pow(end/start,1/years)-1:null,drawdown:worst,start,end};
-}
+type Point={date:string;value:number};
+type History={connected?:boolean;history?:Point[];message?:string};
+type Analytics={connected?:boolean;source?:string;observations?:number;timeWeightedReturn?:number|null;annualizedReturn?:number|null;maxDrawdown?:number|null;message?:string};
+const pct=(v?:number|null)=>v==null?'—':`${(v*100).toFixed(2)}%`;
+const money=(v?:number)=>v==null?'—':`₹${Math.round(v).toLocaleString('en-IN')}`;
 
 export default function PortfolioAnalytics(){
- const[data,setData]=useState<Data|null>(null); const[loading,setLoading]=useState(true); const[error,setError]=useState<string|null>(null);
- const load=useCallback(async()=>{setLoading(true);setError(null);try{const token=await getAccessToken();if(!token)throw new Error('Please sign in to view portfolio analytics.');const r=await fetch(`${API_URL}/trading/portfolio/history`,{headers:{authorization:`Bearer ${token}`}});const j=await r.json() as Data;if(!r.ok)throw new Error(j.message??'Verified portfolio history is unavailable.');setData(j)}catch(e){setError(e instanceof Error?e.message:'Verified portfolio history is unavailable.')}finally{setLoading(false)}},[]);
+ const[data,setData]=useState<Analytics|null>(null); const[history,setHistory]=useState<History|null>(null); const[loading,setLoading]=useState(true); const[error,setError]=useState<string|null>(null);
+ const load=useCallback(async()=>{setLoading(true);setError(null);try{const token=await getAccessToken();if(!token)throw new Error('Please sign in to view portfolio analytics.');const headers={authorization:`Bearer ${token}`};const [analyticsResponse,historyResponse]=await Promise.all([fetch(`${API_URL}/trading/portfolio/analytics`,{headers}),fetch(`${API_URL}/trading/portfolio/history`,{headers})]);const analytics=await analyticsResponse.json() as Analytics;const verifiedHistory=await historyResponse.json() as History;if(!analyticsResponse.ok)throw new Error(analytics.message??'Verified portfolio analytics are unavailable.');if(!historyResponse.ok)throw new Error(verifiedHistory.message??'Verified portfolio history is unavailable.');setData(analytics);setHistory(verifiedHistory)}catch(e){setError(e instanceof Error?e.message:'Verified portfolio analytics are unavailable.')}finally{setLoading(false)}},[]);
  useEffect(()=>{void load()},[load]);
- const a=useMemo(()=>analytics(data?.history??[]),[data?.history]);
+ const points=history?.history??[]; const first=points[0]?.value; const latest=points.at(-1)?.value;
  return <SafeAreaView style={s.safe}><ScrollView contentContainerStyle={s.content} refreshControl={<RefreshControl refreshing={loading} onRefresh={()=>void load()}/> }>
   <View style={s.top}><Text style={s.eyebrow}>INVESTIQ / ANALYTICS</Text><Text style={s.live}>{data?.connected?'VERIFIED BROKER':'NO BROKER'}</Text></View>
-  <Text style={s.title}>Portfolio analytics</Text><Text style={s.subtitle}>Performance metrics calculated only from broker-confirmed portfolio history.</Text>
-  {loading?<View style={s.center}><ActivityIndicator color={colors.accent}/><Text style={s.muted}>Loading verified history…</Text></View>:error?<View style={s.card}><Text style={s.heading}>Analytics unavailable</Text><Text style={s.muted}>{error}</Text></View>:<>
-   <View style={s.hero}><Text style={s.label}>Latest portfolio value</Text><Text style={s.heroValue}>{a.end!=null?money(a.end):'—'}</Text><View style={s.grid}><Metric label="Total return" value={pct(a.tw)}/><Metric label="Annualized" value={pct(a.annual)}/><Metric label="Max drawdown" value={pct(a.drawdown)}/></View></View>
-   <Text style={s.section}>Verified performance</Text><View style={s.card}><Metric label="First observation" value={a.start!=null?money(a.start):'—'}/><Metric label="Latest observation" value={a.end!=null?money(a.end):'—'}/><Text style={s.muted}>{a.tw==null?'At least two valid broker observations are required before a return series is shown.':'Returns are calculated from the verified observation series; deposits and withdrawals are not yet attributed at the observation level.'}</Text></View>
-   <Text style={s.section}>Risk</Text><View style={s.card}><Metric label="Maximum observed drawdown" value={pct(a.drawdown)}/><Text style={s.muted}>{a.drawdown==null?'Insufficient verified history.':'Peak-to-trough decline across the available verified observations.'}</Text></View>
+  <Text style={s.title}>Portfolio analytics</Text><Text style={s.subtitle}>Performance metrics returned by the authenticated analytics service from broker-confirmed history.</Text>
+  {loading?<View style={s.center}><ActivityIndicator color={colors.accent}/><Text style={s.muted}>Loading verified analytics…</Text></View>:error?<View style={s.card}><Text style={s.heading}>Analytics unavailable</Text><Text style={s.muted}>{error}</Text></View>:<>
+   <View style={s.hero}><Text style={s.label}>Latest portfolio value</Text><Text style={s.heroValue}>{money(latest)}</Text><View style={s.grid}><Metric label="Total return" value={pct(data?.timeWeightedReturn)}/><Metric label="Annualized" value={pct(data?.annualizedReturn)}/><Metric label="Max drawdown" value={pct(data?.maxDrawdown)}/></View></View>
+   <Text style={s.section}>Verified performance</Text><View style={s.card}><Metric label="First observation" value={money(first)}/><Metric label="Latest observation" value={money(latest)}/><Text style={s.muted}>{data?.message??`${data?.observations??points.length} verified observations supplied by the analytics service.`}</Text></View>
+   <Text style={s.section}>Risk</Text><View style={s.card}><Metric label="Maximum observed drawdown" value={pct(data?.maxDrawdown)}/><Text style={s.muted}>{data?.maxDrawdown==null?'Insufficient verified history.':'Peak-to-trough decline calculated by the server analytics engine.'}</Text></View>
   </>}
-  <View style={s.note}><Text style={s.noteTitle}>Analytics integrity</Text><Text style={s.muted}>No synthetic prices, benchmark returns, alpha, sector exposure or risk metrics are generated when verified source data is missing. Cash-flow-aware attribution remains separate until broker cash-flow records are available.</Text></View>
+  <View style={s.note}><Text style={s.noteTitle}>Analytics integrity</Text><Text style={s.muted}>The mobile app does not independently calculate performance metrics. Values come from the authenticated server analytics endpoint and verified broker history. No synthetic prices, benchmark returns, alpha, sector exposure or risk metrics are generated when verified source data is missing.</Text></View>
  </ScrollView></SafeAreaView>;
 }
 function Metric({label,value}:{label:string;value:string}){return <View style={s.metric}><Text style={s.label}>{label}</Text><Text style={s.value}>{value}</Text></View>}
