@@ -69,6 +69,7 @@ import { SectorController } from './sector.controller';
 import { SectorService } from './sector.service';
 import { PortfolioHistoryRepository } from './portfolio-history.repository';
 import { PortfolioHistoryService } from './portfolio-history.service';
+import { PortfolioAnalyticsService } from './portfolio-analytics.service';
 
 @Controller('health')
 class HealthController { @Get() health() { return { status: 'ok', service: 'investiq-api', version: 'v1' }; } }
@@ -88,7 +89,7 @@ class HealthController { @Get() health() { return { status: 'ok', service: 'inve
     TradingReconciliationService, TradingEventsService,
     BrokerConnectionRepository, BrokerConnectionService,
     TransactionAuthorizationRepository, TransactionAuthorizationService,
-    PortfolioHistoryRepository, PortfolioHistoryService,
+    PortfolioHistoryRepository, PortfolioHistoryService, PortfolioAnalyticsService,
     WatchlistRepository, WatchlistService, NewsService, MarketOverviewService, SectorService,
   ],
 })
