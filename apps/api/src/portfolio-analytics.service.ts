@@ -4,9 +4,15 @@ type Observation = { date: string; value: number };
 
 @Injectable()
 export class PortfolioAnalyticsService {
+  private validObservations(observations: Observation[]): Observation[] {
+    return observations
+      .filter((point) => Number.isFinite(point.value) && Number.isFinite(new Date(point.date).getTime()))
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }
+
   timeWeightedReturn(observations: Observation[]): number | null {
-    if (observations.length < 2) return null;
-    const ordered = [...observations].sort((a, b) => a.date.localeCompare(b.date));
+    const ordered = this.validObservations(observations);
+    if (ordered.length < 2) return null;
     const first = ordered[0].value;
     const last = ordered[ordered.length - 1].value;
     if (!(first > 0) || !Number.isFinite(last)) return null;
@@ -14,8 +20,8 @@ export class PortfolioAnalyticsService {
   }
 
   maxDrawdown(observations: Observation[]): number | null {
-    if (observations.length < 2) return null;
-    const ordered = [...observations].sort((a, b) => a.date.localeCompare(b.date));
+    const ordered = this.validObservations(observations);
+    if (ordered.length < 2 || !(ordered[0].value > 0)) return null;
     let peak = ordered[0].value;
     let worst = 0;
     for (const point of ordered) {
@@ -26,12 +32,13 @@ export class PortfolioAnalyticsService {
   }
 
   annualizedReturn(observations: Observation[]): number | null {
-    if (observations.length < 2) return null;
-    const ordered = [...observations].sort((a, b) => a.date.localeCompare(b.date));
-    const start = new Date(ordered[0].date).getTime();
-    const end = new Date(ordered[ordered.length - 1].date).getTime();
-    const years = (end - start) / (365.25 * 24 * 60 * 60 * 1000);
-    if (!(years > 0) || !(ordered[0].value > 0) || !(ordered.at(-1)?.value)) return null;
-    return Math.pow(ordered.at(-1)!.value / ordered[0].value, 1 / years) - 1;
+    const ordered = this.validObservations(observations);
+    if (ordered.length < 2) return null;
+    const first = ordered[0];
+    const last = ordered[ordered.length - 1];
+    if (!(first.value > 0) || !(last.value > 0)) return null;
+    const years = (new Date(last.date).getTime() - new Date(first.date).getTime()) / (365.25 * 24 * 60 * 60 * 1000);
+    if (!(years > 0)) return null;
+    return Math.pow(last.value / first.value, 1 / years) - 1;
   }
 }
