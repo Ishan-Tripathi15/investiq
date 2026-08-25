@@ -5,56 +5,23 @@ type Observation = { date: string; value: number };
 @Injectable()
 export class PortfolioAnalyticsService {
   private validObservations(observations: Observation[]): Observation[] {
-    return observations
-      .filter((point) => Number.isFinite(point.value) && Number.isFinite(new Date(point.date).getTime()))
-      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    return observations.filter((point) => Number.isFinite(point.value) && Number.isFinite(new Date(point.date).getTime())).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }
 
-  timeWeightedReturn(observations: Observation[]): number | null {
-    const ordered = this.validObservations(observations);
-    if (ordered.length < 2) return null;
-    const first = ordered[0].value;
-    const last = ordered[ordered.length - 1].value;
-    if (!(first > 0) || !Number.isFinite(last)) return null;
-    return last / first - 1;
+  timeWeightedReturn(observations: Observation[]): number | null { const ordered=this.validObservations(observations); if(ordered.length<2)return null; const first=ordered[0].value,last=ordered[ordered.length-1].value; if(!(first>0)||!Number.isFinite(last))return null; return last/first-1; }
+  maxDrawdown(observations: Observation[]): number | null { const ordered=this.validObservations(observations); if(ordered.length<2||!(ordered[0].value>0))return null; let peak=ordered[0].value,worst=0; for(const point of ordered){if(point.value>peak)peak=point.value;if(peak>0)worst=Math.min(worst,point.value/peak-1);} return worst; }
+  annualizedReturn(observations: Observation[]): number | null { const ordered=this.validObservations(observations); if(ordered.length<2)return null; const first=ordered[0],last=ordered[ordered.length-1]; if(!(first.value>0)||!(last.value>0))return null; const years=(new Date(last.date).getTime()-new Date(first.date).getTime())/(365.25*24*60*60*1000); if(!(years>0))return null; return Math.pow(last.value/first.value,1/years)-1; }
+  benchmarkReturn(observations: Observation[]): number | null { return this.timeWeightedReturn(observations); }
+  relativeReturn(portfolioObservations: Observation[],benchmarkObservations: Observation[]): number | null { const portfolio=this.timeWeightedReturn(portfolioObservations),benchmark=this.benchmarkReturn(benchmarkObservations); if(portfolio==null||benchmark==null)return null; return portfolio-benchmark; }
+
+  pairedReturns(portfolio: Observation[], benchmark: Observation[]): Array<{portfolio:number;benchmark:number}> {
+    const p=this.validObservations(portfolio), b=this.validObservations(benchmark); if(p.length<2||b.length<2)return [];
+    const byDate=new Map(b.map((point)=>[new Date(point.date).toISOString().slice(0,10),point.value])); const result=[];
+    for(let i=1;i<p.length;i++){const previous=p[i-1],current=p[i],previousBenchmark=byDate.get(new Date(previous.date).toISOString().slice(0,10)),currentBenchmark=byDate.get(new Date(current.date).toISOString().slice(0,10)); if(previousBenchmark&&currentBenchmark&&previous.value>0&&previousBenchmark>0&&current.value>0&&currentBenchmark>0)result.push({portfolio:current.value/previous.value-1,benchmark:currentBenchmark/previousBenchmark-1});}
+    return result;
   }
 
-  maxDrawdown(observations: Observation[]): number | null {
-    const ordered = this.validObservations(observations);
-    if (ordered.length < 2 || !(ordered[0].value > 0)) return null;
-    let peak = ordered[0].value;
-    let worst = 0;
-    for (const point of ordered) {
-      if (point.value > peak) peak = point.value;
-      if (peak > 0) worst = Math.min(worst, point.value / peak - 1);
-    }
-    return worst;
-  }
+  beta(portfolio: Observation[], benchmark: Observation[]): number | null { const pairs=this.pairedReturns(portfolio,benchmark); if(pairs.length<2)return null; const meanP=pairs.reduce((s,x)=>s+x.portfolio,0)/pairs.length,meanB=pairs.reduce((s,x)=>s+x.benchmark,0)/pairs.length; const variance=pairs.reduce((s,x)=>s+(x.benchmark-meanB)**2,0); if(!(variance>0))return null; const covariance=pairs.reduce((s,x)=>s+(x.portfolio-meanP)*(x.benchmark-meanB),0); return covariance/variance; }
 
-  annualizedReturn(observations: Observation[]): number | null {
-    const ordered = this.validObservations(observations);
-    if (ordered.length < 2) return null;
-    const first = ordered[0];
-    const last = ordered[ordered.length - 1];
-    if (!(first.value > 0) || !(last.value > 0)) return null;
-    const years = (new Date(last.date).getTime() - new Date(first.date).getTime()) / (365.25 * 24 * 60 * 60 * 1000);
-    if (!(years > 0)) return null;
-    return Math.pow(last.value / first.value, 1 / years) - 1;
-  }
-
-  benchmarkReturn(observations: Observation[]): number | null {
-    const ordered = this.validObservations(observations);
-    if (ordered.length < 2) return null;
-    const first = ordered[0].value;
-    const last = ordered[ordered.length - 1].value;
-    if (!(first > 0) || !(last > 0)) return null;
-    return last / first - 1;
-  }
-
-  relativeReturn(portfolioObservations: Observation[], benchmarkObservations: Observation[]): number | null {
-    const portfolio = this.timeWeightedReturn(portfolioObservations);
-    const benchmark = this.benchmarkReturn(benchmarkObservations);
-    if (portfolio == null || benchmark == null) return null;
-    return portfolio - benchmark;
-  }
+  alpha(portfolio: Observation[], benchmark: Observation[], riskFreeAnnualized=0): number | null { const beta=this.beta(portfolio,benchmark), portfolioReturn=this.timeWeightedReturn(portfolio), benchmarkReturn=this.benchmarkReturn(benchmark); if(beta==null||portfolioReturn==null||benchmarkReturn==null)return null; return portfolioReturn-(riskFreeAnnualized+beta*(benchmarkReturn-riskFreeAnnualized)); }
 }
