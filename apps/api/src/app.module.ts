@@ -77,13 +77,15 @@ import { SectorService } from './sector.service';
 import { PortfolioHistoryRepository } from './portfolio-history.repository';
 import { PortfolioHistoryService } from './portfolio-history.service';
 import { PortfolioAnalyticsService } from './portfolio-analytics.service';
+import { Phase8AuditController } from './phase8-audit.controller';
+import { Phase8AuditService } from './phase8-audit.service';
 
 @Controller('health')
 class HealthController { @Get() health() { return { status: 'ok', service: 'investiq-api', version: 'v1' }; } }
 
 @Module({
   imports: [ThrottlerModule.forRoot({ throttlers: [{ name: 'default', ttl: 60_000, limit: 120 }] })],
-  controllers: [HealthController, AuthController, MfaController, ProfileController, AiController, PortfolioIntelligenceController, PortfolioCopilotController, SecurityActivityController, SecurityNotificationsController, NotificationDeliveryController, MarketDataController, FundamentalsController, FundamentalIntelligenceController, TradingController, TradingRiskController, BrokerConnectionController, WatchlistController, NewsController, NewsAlertsController, MarketOverviewController, SectorController, MutualFundsController, MutualFundAnalyticsController, MutualFundComparisonController, MutualFundWatchlistController, MutualFundIntelligenceController],
+  controllers: [HealthController, AuthController, MfaController, ProfileController, AiController, PortfolioIntelligenceController, PortfolioCopilotController, SecurityActivityController, SecurityNotificationsController, NotificationDeliveryController, MarketDataController, FundamentalsController, FundamentalIntelligenceController, TradingController, TradingRiskController, BrokerConnectionController, WatchlistController, NewsController, NewsAlertsController, MarketOverviewController, SectorController, MutualFundsController, MutualFundAnalyticsController, MutualFundComparisonController, MutualFundWatchlistController, MutualFundIntelligenceController, Phase8AuditController],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_INTERCEPTOR, useClass: HttpObservabilityInterceptor },
@@ -98,6 +100,7 @@ class HealthController { @Get() health() { return { status: 'ok', service: 'inve
     TransactionAuthorizationRepository, TransactionAuthorizationService,
     PortfolioHistoryRepository, PortfolioHistoryService, PortfolioAnalyticsService,
     WatchlistRepository, WatchlistService, NewsService, NewsAlertsRepository, NewsAlertsService, MarketOverviewService, SectorService,
+    Phase8AuditService,
   ],
 })
 export class AppModule implements NestModule {
