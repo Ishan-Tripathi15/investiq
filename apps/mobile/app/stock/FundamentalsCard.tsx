@@ -1,0 +1,20 @@
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { colors, radius, spacing } from '@/theme';
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000/api/v1';
+type Snapshot = { marketCap?: number; enterpriseValue?: number; pe?: number; forwardPe?: number; peg?: number; priceToSales?: number; priceToBook?: number; evToEbitda?: number; revenue?: number; ebitda?: number; netIncome?: number; eps?: number; freeCashFlow?: number; totalDebt?: number; totalCash?: number; roe?: number; roa?: number; grossMarginPct?: number; operatingMarginPct?: number; netMarginPct?: number; };
+type Response = { available: boolean; data: Snapshot | null; source: { provider: string; retrievedAt: string } | null; message?: string };
+const money = (v?: number) => v == null || !Number.isFinite(v) ? '—' : `₹${v.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+const pct = (v?: number) => v == null || !Number.isFinite(v) ? '—' : `${v.toFixed(2)}%`;
+const ratio = (v?: number) => v == null || !Number.isFinite(v) ? '—' : v.toFixed(2);
+export default function FundamentalsCard({ symbol }: { symbol: string }) {
+  const [data, setData] = useState<Response | null>(null);
+  useEffect(() => { let active = true; fetch(`${API_URL}/market-data/stocks/${encodeURIComponent(symbol)}/fundamentals`).then(async r => { const j = await r.json() as Response; if (active) setData(r.ok ? j : { available: false, data: null, source: null, message: j.message ?? 'Fundamentals unavailable.' }); }).catch(() => active && setData({ available: false, data: null, source: null, message: 'Unable to reach the fundamentals provider.' })); return () => { active = false; }; }, [symbol]);
+  if (!data) return <View style={styles.card}><ActivityIndicator color={colors.accent}/><Text style={styles.muted}>Loading verified fundamentals…</Text></View>;
+  if (!data.available || !data.data) return <View style={styles.card}><Text style={styles.title}>Fundamentals</Text><Text style={styles.muted}>{data.message ?? 'Verified fundamentals are unavailable.'}</Text></View>;
+  const d = data.data;
+  const metrics: [string, string][] = [['Market cap', money(d.marketCap)], ['P/E', ratio(d.pe)], ['Forward P/E', ratio(d.forwardPe)], ['PEG', ratio(d.peg)], ['Price / book', ratio(d.priceToBook)], ['EV / EBITDA', ratio(d.evToEbitda)], ['Revenue', money(d.revenue)], ['EBITDA', money(d.ebitda)], ['Net income', money(d.netIncome)], ['Free cash flow', money(d.freeCashFlow)], ['ROE', pct(d.roe)], ['ROA', pct(d.roa)], ['Operating margin', pct(d.operatingMarginPct)], ['Net margin', pct(d.netMarginPct)]];
+  return <View style={styles.card}><View style={styles.header}><Text style={styles.title}>Fundamentals</Text><Text style={styles.source}>{data.source?.provider ?? 'Verified provider'}</Text></View><View style={styles.grid}>{metrics.map(([label, value]) => <View key={label} style={styles.metric}><Text style={styles.muted}>{label}</Text><Text style={styles.value}>{value}</Text></View>)}</View><Text style={styles.disclaimer}>Only provider-supplied fundamentals are displayed. Missing values remain unavailable.</Text></View>;
+}
+const styles = StyleSheet.create({ card: { backgroundColor: colors.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border, padding: spacing.md, gap: spacing.md }, header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, title: { color: colors.text, fontSize: 17, fontWeight: '900' }, source: { color: colors.accent, fontSize: 8, fontWeight: '900' }, grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }, metric: { width: '48%', backgroundColor: colors.surfaceElevated, borderRadius: radius.sm, padding: spacing.sm }, muted: { color: colors.muted, fontSize: 10, lineHeight: 15 }, value: { color: colors.text, fontSize: 13, fontWeight: '900', marginTop: 4 }, disclaimer: { color: colors.muted, fontSize: 9, lineHeight: 14 } });
