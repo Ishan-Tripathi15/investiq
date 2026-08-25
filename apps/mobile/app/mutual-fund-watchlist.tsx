@@ -120,8 +120,8 @@ const s = StyleSheet.create({
   subtitle: { color: colors.muted, fontSize: 12, lineHeight: 18 }, add: { flexDirection: 'row', gap: 8 },
   input: { flex: 1, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, color: colors.text, paddingHorizontal: 12 },
   button: { backgroundColor: colors.accent, borderRadius: radius.md, paddingHorizontal: 18, justifyContent: 'center' }, buttonText: { color: colors.background, fontWeight: '900', fontSize: 11 },
-  error: { color: colors.danger, fontSize: 10 }, state: { padding: spacing.lg, alignItems: 'center' },
+  error: { color: colors.warning, fontSize: 10 }, state: { padding: spacing.lg, alignItems: 'center' },
   card: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, padding: spacing.md, flexDirection: 'row', alignItems: 'center', gap: 10 },
   cardBody: { flex: 1 }, name: { color: colors.text, fontSize: 13, fontWeight: '900' }, meta: { color: colors.muted, fontSize: 9, marginTop: 4 }, nav: { color: colors.text, fontSize: 16, fontWeight: '900', marginTop: 9 },
-  remove: { color: colors.danger, fontSize: 9, fontWeight: '900' }, empty: { padding: spacing.lg, backgroundColor: colors.surface, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border },
+  remove: { color: colors.warning, fontSize: 9, fontWeight: '900' }, empty: { padding: spacing.lg, backgroundColor: colors.surface, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border },
 });
