@@ -1,0 +1,1 @@
+Analytics UI integration ready for CI.

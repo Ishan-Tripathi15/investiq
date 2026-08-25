@@ -1,0 +1,1 @@
+Phase 7.10 connects portfolio analytics to verified broker history. Metrics remain unavailable when source data is insufficient.
