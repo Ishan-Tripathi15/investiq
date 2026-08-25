@@ -16,3 +16,21 @@ export interface SectorOverviewResponse {
   source: MarketSource | null;
   message?: string;
 }
+
+export interface PortfolioSectorExposure {
+  sector: string;
+  marketValue: number;
+  weightPercent: number;
+  holdings: number;
+}
+
+export interface PortfolioSectorExposureResponse {
+  available: boolean;
+  totalMarketValue: number;
+  classifiedMarketValue: number;
+  unclassifiedMarketValue: number;
+  classifiedCoveragePercent: number;
+  sectors: PortfolioSectorExposure[];
+  source: MarketSource | null;
+  message?: string;
+}
