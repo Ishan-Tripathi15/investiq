@@ -13,7 +13,10 @@ const money=(v:number)=>`₹${Math.round(v).toLocaleString('en-IN')}`;
 function analytics(points:Point[]){
  const ordered=points.filter(x=>x.date&&Number.isFinite(x.value)&&x.value!>=0).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
  if(ordered.length<2)return {tw:null,annual:null,drawdown:null,start:null,end:null};
- const first=ordered[0]; const last=ordered.at(-1)!;
+ const first=ordered[0];
+ if(!first)return {tw:null,annual:null,drawdown:null,start:null,end:null};
+ const last=ordered.at(-1);
+ if(!last)return {tw:null,annual:null,drawdown:null,start:null,end:null};
  const start=first.value!; const end=last.value!;
  const startMs=new Date(first.date!).getTime(); const endMs=new Date(last.date!).getTime();
  const years=(endMs-startMs)/(365.25*24*60*60*1000);
