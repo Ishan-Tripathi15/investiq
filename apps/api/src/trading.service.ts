@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, ServiceUnavailableException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { createDraftOrder, type OrderRequest, validateOrder, validateOrderCapabilities } from '@investiq/domain';
 import { createBrokerAdapter } from './trading.provider';
@@ -6,6 +6,7 @@ import { TradingRepository } from './trading.repository';
 import { TradingRiskService } from './trading-risk.service';
 import { BrokerConnectionRepository } from './broker-connection.repository';
 import { TransactionAuthorizationService } from './transaction-authorization.service';
+import { TradingStateService } from './trading-state.service';
 import type { BrokerAdapter } from './trading.types';
 
 @Injectable()
@@ -16,6 +17,7 @@ export class TradingService {
     private readonly risk: TradingRiskService,
     private readonly connections: BrokerConnectionRepository,
     private readonly transactionAuthorization: TransactionAuthorizationService,
+    private readonly state: TradingStateService,
   ) { this.broker = createBrokerAdapter(connections); }
 
   async status() { return this.broker.health(); }
@@ -95,7 +97,17 @@ export class TradingService {
     }
   }
 
-  async cancelOrder(userId: string, orderId: string) { const health = await this.broker.health(userId); if (!health.configured || !health.connected) throw new ServiceUnavailableException(health.message); const order = await this.broker.cancelOrder(userId, orderId); void this.repository.audit(userId, 'order.cancelled', { order }, orderId); return order; }
+  async cancelOrder(userId: string, orderId: string) {
+    const health = await this.broker.health(userId);
+    if (!health.configured || !health.connected) throw new ServiceUnavailableException(health.message);
+    const current = await this.broker.getOrder(userId, orderId);
+    if (!current) throw new NotFoundException('Order not found');
+    this.state.assertTransition(current.status, 'cancelled');
+    const order = await this.broker.cancelOrder(userId, orderId);
+    void this.repository.audit(userId, 'order.cancelled', { previousStatus: current.status, order }, orderId);
+    return order;
+  }
+
   async getOrder(userId: string, orderId: string) { return this.broker.getOrder(userId, orderId); }
   async listOrders(userId: string) { return this.broker.listOrders(userId); }
   async positions(userId: string) { return this.broker.getPositions(userId); }
