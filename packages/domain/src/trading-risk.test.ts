@@ -10,7 +10,7 @@ const context = {
   maxOrderNotional: 50_000,
   maxOpenOrdersPerSymbol: 2,
   maxPositionConcentrationPct: 25,
-  maxPortfolioExposurePct: 100,
+  maxPortfolioExposurePct: 90,
   maxPriceDeviationPct: 10,
   requirePriceForBuyingPowerCheck: true,
 };
