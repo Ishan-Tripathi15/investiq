@@ -36,6 +36,9 @@ export class TradingRiskService {
       maxOrderQuantity: envNumber('TRADING_MAX_ORDER_QUANTITY', 10000),
       maxOrderNotional: envNumber('TRADING_MAX_ORDER_NOTIONAL', 1000000),
       maxOpenOrdersPerSymbol: envNumber('TRADING_MAX_OPEN_ORDERS_PER_SYMBOL', 5),
+      maxPositionConcentrationPct: envNumber('TRADING_MAX_POSITION_CONCENTRATION_PCT', 25),
+      maxPortfolioExposurePct: envNumber('TRADING_MAX_PORTFOLIO_EXPOSURE_PCT', 100),
+      maxPriceDeviationPct: envNumber('TRADING_MAX_PRICE_DEVIATION_PCT', 10),
       requirePriceForBuyingPowerCheck: process.env.TRADING_REQUIRE_PRICE_FOR_BUYING_POWER !== 'false',
     });
 
