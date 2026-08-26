@@ -1,0 +1,6 @@
+import { strict as assert } from 'node:assert';
+import { test } from 'node:test';
+import { applyFill, createDraftOrder, transitionOrder } from './trading';
+test('canonical lifecycle and weighted fills', () => { const d=createDraftOrder({symbol:'AAPL',side:'buy',type:'market',quantity:10},'o1'); const s=transitionOrder(transitionOrder(d,'pending'),'submitted'); const p=applyFill(s,4,100); const f=applyFill(p,6,110); assert.equal(p.status,'partially_filled'); assert.equal(f.status,'filled'); assert.equal(f.filledQuantity,10); assert.equal(f.averageFillPrice,106); });
+test('terminal transitions are rejected', () => { const d=createDraftOrder({symbol:'AAPL',side:'buy',type:'market',quantity:1},'o2'); const r=transitionOrder(d,'rejected','broker rejected'); assert.throws(()=>transitionOrder(r,'pending'),/Invalid order transition/); const c=transitionOrder(d,'cancelled'); assert.throws(()=>transitionOrder(c,'submitted'),/Invalid order transition/); });
+test('overfill is rejected', () => { const d=createDraftOrder({symbol:'AAPL',side:'buy',type:'market',quantity:5},'o3'); const s=transitionOrder(transitionOrder(d,'pending'),'submitted'); assert.throws(()=>applyFill(s,6,100),/exceeds order quantity/); });
