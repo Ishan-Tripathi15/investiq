@@ -30,6 +30,7 @@ import { TradingRepository } from './trading.repository';
 import { TradingRiskController } from './trading-risk.controller';
 import { TradingRiskService } from './trading-risk.service';
 import { TradingService } from './trading.service';
+import { TradingStateService } from './trading-state.service';
 import { AuthController } from './auth.controller';
 import { AuthGuard } from './auth.guard';
 import { AuthRepository } from './auth.repository';
@@ -94,7 +95,7 @@ class HealthController { @Get() health() { return { status: 'ok', service: 'inve
     NotificationDeliveryRepository, NotificationDeliveryService, AiService,
     PortfolioIntelligenceService, PortfolioMemoryRepository,
     MarketDataService, MarketDataRepository, MarketDataCache, MutualFundsService, MutualFundAnalyticsService, MutualFundComparisonService, MutualFundWatchlistRepository, MutualFundWatchlistService, MutualFundIntelligenceService, FundamentalsService, FundamentalIntelligenceService,
-    HistoricalValuationService, TradingRepository, TradingRiskService, TradingService,
+    HistoricalValuationService, TradingRepository, TradingRiskService, TradingService, TradingStateService,
     TradingReconciliationService, TradingEventsService,
     BrokerConnectionRepository, BrokerConnectionService,
     TransactionAuthorizationRepository, TransactionAuthorizationService,
