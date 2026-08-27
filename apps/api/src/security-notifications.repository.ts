@@ -22,6 +22,22 @@ export class SecurityNotificationsRepository {
     this.pool = url ? new Pool({ connectionString: url, max: 10, idleTimeoutMillis: 30_000 }) : null;
   }
 
+  async upsertPreference(userId: string, preferences: Record<string, unknown>): Promise<Record<string, unknown>> {
+    if (!this.pool) return preferences;
+    await this.pool.query(
+      `INSERT INTO notification_preferences(user_id, preferences) VALUES($1,$2::jsonb)
+       ON CONFLICT(user_id) DO UPDATE SET preferences=EXCLUDED.preferences, updated_at=NOW()`,
+      [userId, JSON.stringify(preferences)],
+    );
+    return preferences;
+  }
+
+  async getPreference(userId: string): Promise<Record<string, unknown>> {
+    if (!this.pool) return {};
+    const result = await this.pool.query(`SELECT preferences FROM notification_preferences WHERE user_id=$1`, [userId]);
+    return (result.rows[0]?.preferences ?? {}) as Record<string, unknown>;
+  }
+
   async create(input: Omit<SecurityNotification, 'id' | 'createdAt' | 'readAt'>): Promise<SecurityNotification | null> {
     if (!this.pool) return null;
     const result = await this.pool.query(
