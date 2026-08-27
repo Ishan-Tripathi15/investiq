@@ -2,7 +2,7 @@
   "expo": {
     "name": "InvestIQ",
     "slug": "investiq",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "investiq",
     "userInterfaceStyle": "automatic",
@@ -16,9 +16,9 @@
     },
     "plugins": [
       "expo-router",
-      ["expo-local-authentication", { "faceIDPermission": "Allow InvestIQ to use Face ID to protect your account and portfolio." }],
+      ["expo-local-authentication", {"faceIDPermission": "Allow InvestIQ to use Face ID to protect your account and portfolio."}],
       "expo-notifications"
     ],
-    "experiments": { "typedRoutes": true }
+    "experiments": {"typedRoutes": true}
   }
 }
