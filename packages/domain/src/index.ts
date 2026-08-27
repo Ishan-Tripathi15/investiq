@@ -68,3 +68,5 @@ export * from './live-intelligence-notifications';
 export * from './intelligence-alert-trigger';
 
 export * from './intelligence-digest';
+
+export * from './intelligence-digest-scheduler';
