@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { toLiveIntelligenceNotification, type LiveIntelligenceAction } from '@investiq/domain';
 import { Observable, from, interval, of } from 'rxjs';
 import { catchError, map, startWith, switchMap } from 'rxjs/operators';
 import { SecurityNotificationsRepository, type SecurityNotification, type SecurityNotificationSeverity } from './security-notifications.repository';
@@ -33,6 +34,11 @@ export class SecurityNotificationsService {
       }
     }
     return notification;
+  }
+
+  async createIntelligenceAction(userId: string, action: LiveIntelligenceAction) {
+    const event = toLiveIntelligenceNotification(userId, action);
+    return this.create(event);
   }
 
   list(userId: string, afterId = 0, limit = 50) {
