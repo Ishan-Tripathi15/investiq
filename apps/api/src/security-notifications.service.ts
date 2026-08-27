@@ -29,7 +29,7 @@ export class SecurityNotificationsService {
     const notification = await this.repository.create({ ...input, metadata: input.metadata ?? {}, idempotencyKey: input.idempotencyKey });
     if (notification) {
       try {
-        await this.delivery.deliver(notification);
+        await this.delivery.retryableDeliver(notification);
       } catch {
         // The security event remains persisted even when an external provider is unavailable.
       }
