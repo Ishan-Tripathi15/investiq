@@ -13,6 +13,7 @@
     "test": "jest --passWithNoTests"
   },
   "dependencies": {
+    "@expo/metro-runtime": "^6.1.2",
     "@investiq/domain": "workspace:*",
     "expo": "^57.0.0",
     "expo-constants": "~18.0.0",
@@ -25,12 +26,15 @@
     "react": "19.2.3",
     "react-native": "0.86.0",
     "react-native-safe-area-context": "~5.6.0",
-    "react-native-screens": "~4.16.0"
+    "react-native-screens": "~4.16.0",
+    "react-native-web": "^0.21.2"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "@types/react": "~19.2.0",
+    "eslint": "^9.39.1",
     "jest": "^30.0.0",
-    "typescript": "~5.9.2"
+    "typescript": "~5.9.2",
+    "typescript-eslint": "^8.50.0"
   }
 }
