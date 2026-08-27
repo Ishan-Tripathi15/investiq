@@ -61,6 +61,7 @@ import { NotificationDeliveryRepository } from './notification-delivery.reposito
 import { NotificationDeliveryService } from './notification-delivery.service';
 import { PortfolioIntelligenceController } from './portfolio-intelligence.controller';
 import { PortfolioIntelligenceService } from './portfolio-intelligence.service';
+import { IntelligenceDigestController } from './intelligence-digest.controller';
 import { PortfolioCopilotController } from './portfolio-copilot.controller';
 import { PortfolioMemoryRepository } from './portfolio-memory.repository';
 import { WatchlistController } from './watchlist.controller';
@@ -86,7 +87,7 @@ class HealthController { @Get() health() { return { status: 'ok', service: 'inve
 
 @Module({
   imports: [ThrottlerModule.forRoot({ throttlers: [{ name: 'default', ttl: 60_000, limit: 120 }] })],
-  controllers: [HealthController, AuthController, MfaController, ProfileController, AiController, PortfolioIntelligenceController, PortfolioCopilotController, SecurityActivityController, SecurityNotificationsController, NotificationDeliveryController, MarketDataController, FundamentalsController, FundamentalIntelligenceController, TradingController, TradingRiskController, BrokerConnectionController, WatchlistController, NewsController, NewsAlertsController, MarketOverviewController, SectorController, MutualFundsController, MutualFundAnalyticsController, MutualFundComparisonController, MutualFundWatchlistController, MutualFundIntelligenceController, Phase8AuditController],
+  controllers: [HealthController, AuthController, MfaController, ProfileController, AiController, PortfolioIntelligenceController, IntelligenceDigestController, PortfolioCopilotController, SecurityActivityController, SecurityNotificationsController, NotificationDeliveryController, MarketDataController, FundamentalsController, FundamentalIntelligenceController, TradingController, TradingRiskController, BrokerConnectionController, WatchlistController, NewsController, NewsAlertsController, MarketOverviewController, SectorController, MutualFundsController, MutualFundAnalyticsController, MutualFundComparisonController, MutualFundWatchlistController, MutualFundIntelligenceController, Phase8AuditController],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_INTERCEPTOR, useClass: HttpObservabilityInterceptor },
