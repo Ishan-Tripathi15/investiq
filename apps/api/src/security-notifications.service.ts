@@ -12,6 +12,7 @@ export interface SecurityNotificationInput {
   title: string;
   message: string;
   metadata?: Record<string, unknown>;
+  idempotencyKey?: string;
 }
 
 export interface SecurityNotificationSseMessage {
@@ -25,7 +26,7 @@ export class SecurityNotificationsService {
   constructor(private readonly repository: SecurityNotificationsRepository, private readonly delivery: NotificationDeliveryService) {}
 
   async create(input: SecurityNotificationInput) {
-    const notification = await this.repository.create({ ...input, metadata: input.metadata ?? {} });
+    const notification = await this.repository.create({ ...input, metadata: input.metadata ?? {}, idempotencyKey: input.idempotencyKey });
     if (notification) {
       try {
         await this.delivery.deliver(notification);
