@@ -26,6 +26,9 @@ export interface DeliveryRecord {
   errorCode?: string;
   errorMessage?: string;
   attemptCount: number;
+  nextAttemptAt?: string;
+  lastAttemptAt?: string;
+  maxAttempts?: number;
 }
 
 export class NotificationDeliveryRepository {
@@ -72,7 +75,7 @@ export class NotificationDeliveryRepository {
     if (!this.pool) return undefined;
     const result = await this.pool.query(
       `INSERT INTO notification_deliveries(notification_id,user_id,channel,provider,destination_hash,status,provider_message_id,error_code,error_message,attempt_count,sent_at)
-       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,CASE WHEN $6='sent' THEN NOW() ELSE NULL END) RETURNING id`,
+       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,CASE WHEN $6='sent' THEN NOW() ELSE NULL END, NOW(), CASE WHEN $6='failed' AND $10 < 3 THEN NOW() + INTERVAL '1 minute' * POWER(2, $10 - 1) ELSE NULL END, 3) RETURNING id`,
       [input.notificationId ?? null,input.userId,input.channel,input.provider,input.destinationHash ?? null,input.status,input.providerMessageId ?? null,input.errorCode ?? null,input.errorMessage ?? null,input.attemptCount],
     );
     return Number(result.rows[0]?.id);
@@ -82,13 +85,13 @@ export class NotificationDeliveryRepository {
     if (!this.pool) return [];
     const safeLimit = Math.max(1, Math.min(200, Math.floor(limit)));
     const result = await this.pool.query(
-      `SELECT id,notification_id,user_id,channel,provider,destination_hash,status,provider_message_id,error_code,error_message,attempt_count
+      `SELECT id,notification_id,user_id,channel,provider,destination_hash,status,provider_message_id,error_code,error_message,attempt_count,next_attempt_at,last_attempt_at,max_attempts
        FROM notification_deliveries WHERE user_id=$1 ORDER BY created_at DESC LIMIT $2`, [userId, safeLimit]);
     return result.rows.map((row) => ({
       id: Number(row.id), notificationId: row.notification_id ? Number(row.notification_id) : undefined, userId: String(row.user_id),
       channel: row.channel, provider: String(row.provider), destinationHash: row.destination_hash ?? undefined,
       status: row.status, providerMessageId: row.provider_message_id ?? undefined, errorCode: row.error_code ?? undefined,
-      errorMessage: row.error_message ?? undefined, attemptCount: Number(row.attempt_count),
+      errorMessage: row.error_message ?? undefined, attemptCount: Number(row.attempt_count), nextAttemptAt: row.next_attempt_at ?? undefined, lastAttemptAt: row.last_attempt_at ?? undefined, maxAttempts: Number(row.max_attempts),
     }));
   }
 }
