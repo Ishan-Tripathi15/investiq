@@ -58,3 +58,5 @@ export * from './portfolio-action-center';
 export * from './proactive-intelligence-alerts';
 
 export * from './intelligence-notification-bridge';
+
+export * from './notification-intelligence-control';
