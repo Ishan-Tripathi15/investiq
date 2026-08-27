@@ -2,8 +2,10 @@ import { ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { validateProductionConfig } from './production-config';
 
 async function bootstrap() {
+  validateProductionConfig();
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
   app.enableShutdownHooks();
   app.setGlobalPrefix('api/v1');
