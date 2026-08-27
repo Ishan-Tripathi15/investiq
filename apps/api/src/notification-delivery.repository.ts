@@ -81,6 +81,15 @@ export class NotificationDeliveryRepository {
     return Number(result.rows[0]?.id);
   }
 
+  async recordAuditEvent(input: { userId: string; notificationId?: number; eventType: string; status?: string; provider?: string; attemptCount?: number; errorCode?: string; metadata?: Record<string, unknown> }) {
+    if (!this.pool) return undefined;
+    const result = await this.pool.query(
+      `INSERT INTO notification_audit_events(user_id,notification_id,event_type,status,provider,attempt_count,error_code,metadata) VALUES($1,$2,$3,$4,$5,$6,$7,$8::jsonb) RETURNING id`,
+      [input.userId,input.notificationId ?? null,input.eventType,input.status ?? null,input.provider ?? null,input.attemptCount ?? null,input.errorCode ?? null,JSON.stringify(input.metadata ?? {})],
+    );
+    return Number(result.rows[0]?.id);
+  }
+
   async listDeliveries(userId: string, limit = 100): Promise<DeliveryRecord[]> {
     if (!this.pool) return [];
     const safeLimit = Math.max(1, Math.min(200, Math.floor(limit)));
