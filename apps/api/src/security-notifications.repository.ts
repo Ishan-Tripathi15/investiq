@@ -12,6 +12,7 @@ export interface SecurityNotification {
   metadata: Record<string, unknown>;
   readAt?: string;
   createdAt: string;
+  idempotencyKey?: string;
 }
 
 export class SecurityNotificationsRepository {
@@ -41,12 +42,13 @@ export class SecurityNotificationsRepository {
   async create(input: Omit<SecurityNotification, 'id' | 'createdAt' | 'readAt'>): Promise<SecurityNotification | null> {
     if (!this.pool) return null;
     const result = await this.pool.query(
-      `INSERT INTO security_notifications(user_id, severity, event_type, title, message, metadata)
-       VALUES($1, $2, $3, $4, $5, $6::jsonb)
+      `INSERT INTO security_notifications(user_id, severity, event_type, title, message, metadata, idempotency_key)
+       VALUES($1, $2, $3, $4, $5, $6::jsonb, $7)
+       ON CONFLICT (user_id, idempotency_key) WHERE idempotency_key IS NOT NULL DO NOTHING
        RETURNING id, user_id, severity, event_type, title, message, metadata, read_at, created_at`,
-      [input.userId, input.severity, input.eventType, input.title, input.message, JSON.stringify(input.metadata)],
+      [input.userId, input.severity, input.eventType, input.title, input.message, JSON.stringify(input.metadata), input.idempotencyKey ?? null],
     );
-    return this.map(result.rows[0]);
+    return result.rows[0] ? this.map(result.rows[0]) : null;
   }
 
   async list(userId: string, afterId = 0, limit = 50): Promise<SecurityNotification[]> {
