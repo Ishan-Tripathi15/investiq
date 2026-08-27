@@ -64,3 +64,5 @@ export * from './notification-intelligence-control';
 export * from './unified-intelligence-snapshot';
 
 export * from './live-intelligence-notifications';
+
+export * from './intelligence-alert-trigger';
