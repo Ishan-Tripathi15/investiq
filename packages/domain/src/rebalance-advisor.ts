@@ -62,7 +62,7 @@ export function buildRebalanceAdvice(
     const driftPct = currentPct - target.targetPct;
     const tolerance = target.tolerancePct ?? 2;
     const amount = Math.abs(driftPct) / 100 * portfolioValue;
-    const action = Math.abs(driftPct) <= tolerance ? 'hold' : driftPct > 0 ? 'sell' : 'buy';
+    const action: RebalanceAction['action'] = Math.abs(driftPct) <= tolerance ? 'hold' : driftPct > 0 ? 'sell' : 'buy';
     return { assetClass: target.assetClass, currentPct, targetPct: target.targetPct, driftPct, action, amount };
   });
 
