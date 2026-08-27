@@ -52,7 +52,7 @@ async function registerDevice(accessToken: string, deviceId: string, pushToken: 
     }
 
     if (attempt < MAX_REGISTRATION_ATTEMPTS - 1) {
-      await sleep(RETRY_DELAYS_MS[attempt]);
+      await sleep(RETRY_DELAYS_MS[attempt] ?? 1500);
     }
   }
 
