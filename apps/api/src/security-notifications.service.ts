@@ -36,6 +36,10 @@ export class SecurityNotificationsService {
     return notification;
   }
 
+  async getPreferences(userId: string) { return this.repository.getPreference(userId); }
+
+  async setPreferences(userId: string, preferences: Record<string, unknown>) { return this.repository.upsertPreference(userId, preferences); }
+
   async createIntelligenceAction(userId: string, action: LiveIntelligenceAction) {
     const event = toLiveIntelligenceNotification(userId, action);
     return this.create(event);
