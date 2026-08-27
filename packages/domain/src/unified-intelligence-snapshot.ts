@@ -1,6 +1,6 @@
 import type { PortfolioAction } from './portfolio-action-center';
 import type { ProactiveAlert } from './proactive-intelligence-alerts';
-import type { IntelligenceNotification, IntelligenceAction } from './intelligence-notification-bridge';
+import type { IntelligenceNotification } from './intelligence-notification-bridge';
 
 export interface UnifiedIntelligenceSnapshot {
   generatedAt: string;
