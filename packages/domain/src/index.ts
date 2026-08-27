@@ -54,3 +54,5 @@ export * from './cross-asset-intelligence';
 export * from './rebalance-advisor';
 
 export * from './portfolio-action-center';
+
+export * from './proactive-intelligence-alerts';
