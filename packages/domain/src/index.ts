@@ -52,3 +52,5 @@ export * from './portfolio-copilot-response';
 export * from './cross-asset-intelligence';
 
 export * from './rebalance-advisor';
+
+export * from './portfolio-action-center';
