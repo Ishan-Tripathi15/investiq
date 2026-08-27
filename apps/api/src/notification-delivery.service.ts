@@ -38,8 +38,10 @@ export class NotificationDeliveryService {
       devices,
       data: { notificationId: String(notification.id), eventType: notification.eventType, severity: notification.severity },
     };
+    const startedAt = Date.now();
     const results = await deliverSecurityNotification(request);
     for (const result of results) {
+      await this.repository.recordAuditEvent({ userId: notification.userId, notificationId: notification.id, eventType: 'delivery_attempt', status: result.status, provider: result.provider, attemptCount, errorCode: result.errorCode, metadata: { latencyMs: Date.now() - startedAt, channel: result.channel } });
       await this.repository.recordDelivery({
         notificationId: notification.id,
         userId: notification.userId,
