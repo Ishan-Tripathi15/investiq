@@ -48,3 +48,5 @@ export * from './portfolio-intelligence';
 export * from './ai-portfolio-explanation';
 export * from './portfolio-copilot';
 export * from './portfolio-copilot-response';
+
+export * from './cross-asset-intelligence';
