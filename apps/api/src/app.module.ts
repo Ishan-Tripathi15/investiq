@@ -81,6 +81,7 @@ import { PortfolioHistoryService } from './portfolio-history.service';
 import { PortfolioAnalyticsService } from './portfolio-analytics.service';
 import { Phase8AuditController } from './phase8-audit.controller';
 import { Phase8AuditService } from './phase8-audit.service';
+import { IntelligenceDigestWorker } from './intelligence-digest.worker';
 
 @Controller('health')
 class HealthController { @Get() health() { return { status: 'ok', service: 'investiq-api', version: 'v1' }; } }
@@ -102,7 +103,7 @@ class HealthController { @Get() health() { return { status: 'ok', service: 'inve
     TransactionAuthorizationRepository, TransactionAuthorizationService,
     PortfolioHistoryRepository, PortfolioHistoryService, PortfolioAnalyticsService,
     WatchlistRepository, WatchlistService, NewsService, NewsAlertsRepository, NewsAlertsService, MarketOverviewService, SectorService,
-    Phase8AuditService,
+    Phase8AuditService, IntelligenceDigestWorker,
   ],
 })
 export class AppModule implements NestModule {
