@@ -10,6 +10,12 @@ import { SecurityNotificationsService, type SecurityNotificationSseMessage } fro
 export class SecurityNotificationsController {
   constructor(private readonly notifications: SecurityNotificationsService) {}
 
+  @Get('preferences')
+  async getPreferences(@Req() req: AuthenticatedRequest) { return this.service.getPreferences(req.user!.id); }
+
+  @Post('preferences')
+  async setPreferences(@Req() req: AuthenticatedRequest, @Body() body: Record<string, unknown>) { return this.service.setPreferences(req.user!.id, body); }
+
   @Get()
   list(@Req() req: AuthenticatedRequest, @Query('afterId') afterId?: string, @Query('limit') limit?: string) {
     return this.notifications.list(req.user!.id, Number(afterId ?? 0), Number(limit ?? 50));
