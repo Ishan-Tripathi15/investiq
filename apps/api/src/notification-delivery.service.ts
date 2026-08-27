@@ -22,7 +22,11 @@ export class NotificationDeliveryService {
     return this.repository.listDeliveries(userId, limit);
   }
 
-  async deliver(notification: SecurityNotification): Promise<void> {
+  async retryableDeliver(notification: SecurityNotification, attemptCount = 1): Promise<void> {
+    try { await this.deliver(notification, attemptCount); } catch (error) { if (attemptCount >= 3) throw error; await new Promise((resolve) => setTimeout(resolve, Math.min(1000 * 2 ** (attemptCount - 1), 4000))); await this.retryableDeliver(notification, attemptCount + 1); }
+  }
+
+  async deliver(notification: SecurityNotification, attemptCount = 1): Promise<void> {
     const profile = await this.profiles.get(notification.userId);
     const devices = await this.repository.listDevices(notification.userId);
     const request: DeliveryRequest = {
@@ -46,7 +50,7 @@ export class NotificationDeliveryService {
         providerMessageId: result.providerMessageId,
         errorCode: result.errorCode,
         errorMessage: result.errorMessage,
-        attemptCount: 1,
+        attemptCount,
       });
     }
   }
