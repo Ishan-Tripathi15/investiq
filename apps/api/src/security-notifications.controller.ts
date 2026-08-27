@@ -1,4 +1,4 @@
-import { BadRequestException, Controller, Get, Param, ParseIntPipe, Post, Query, Req, Sse, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, ParseIntPipe, Post, Query, Req, Sse, UseGuards } from '@nestjs/common';
 import type { Observable } from 'rxjs';
 import { AuthGuard } from './auth.guard';
 import type { AuthenticatedRequest } from './auth.types';
@@ -11,10 +11,10 @@ export class SecurityNotificationsController {
   constructor(private readonly notifications: SecurityNotificationsService) {}
 
   @Get('preferences')
-  async getPreferences(@Req() req: AuthenticatedRequest) { return this.service.getPreferences(req.user!.id); }
+  async getPreferences(@Req() req: AuthenticatedRequest) { return this.notifications.getPreferences(req.user!.id); }
 
   @Post('preferences')
-  async setPreferences(@Req() req: AuthenticatedRequest, @Body() body: Record<string, unknown>) { return this.service.setPreferences(req.user!.id, body); }
+  async setPreferences(@Req() req: AuthenticatedRequest, @Body() body: Record<string, unknown>) { return this.notifications.setPreferences(req.user!.id, body); }
 
   @Get()
   list(@Req() req: AuthenticatedRequest, @Query('afterId') afterId?: string, @Query('limit') limit?: string) {
