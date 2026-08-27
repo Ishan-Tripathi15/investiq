@@ -4,6 +4,7 @@ import { TradingService } from './trading.service';
 import { ProfileService } from './profile.service';
 import { createPortfolioCopilotProvider, type PortfolioCopilotProvider } from './portfolio-copilot.provider';
 import { PortfolioMemoryRepository } from './portfolio-memory.repository';
+import { buildPortfolioActionCenter } from '@investiq/domain';
 
 @Injectable()
 export class PortfolioIntelligenceService {
@@ -43,6 +44,22 @@ export class PortfolioIntelligenceService {
       intelligence,
       riskTwin,
       explanation: buildPortfolioExplanation(intelligence, riskTwin),
+    };
+  }
+
+  async actionCenter(userId: string) {
+    const { intelligence } = await this.build(userId);
+    const actionCenter = buildPortfolioActionCenter({
+      portfolio: {
+        riskLevel: intelligence.riskLevel,
+        warnings: intelligence.warnings,
+        actions: intelligence.actions,
+      },
+    });
+    return {
+      generatedAt: new Date().toISOString(),
+      source: { type: 'verified-portfolio-intelligence' },
+      ...actionCenter,
     };
   }
 
