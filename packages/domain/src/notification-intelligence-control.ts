@@ -31,7 +31,7 @@ const rank: Record<NotificationSeverity, number> = { low: 1, medium: 2, high: 3,
 function inQuietHours(time: string, quiet?: { start: string; end: string }) {
   if (!quiet) return false;
   const toMinutes = (v: string) => {
-    const m = /^(\\d{2}):(\\d{2})$/.exec(v);
+    const m = /^(\d{2}):(\d{2})$/.exec(v);
     if (!m) return -1;
     return Number(m[1]) * 60 + Number(m[2]);
   };
