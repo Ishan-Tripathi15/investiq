@@ -91,7 +91,6 @@ export function subscribeToSecurityNotifications(
   onNotification: (notification: NotificationsTypes.Notification) => void,
 ) {
   if (isExpoGo) return () => {};
-  const Notifications = getNotifications();
-  const received = Notifications.addNotificationReceivedListener(onNotification);
-  return () => received.remove();
+  const received = getNotifications().then(Notifications => Notifications.addNotificationReceivedListener(onNotification));
+  return () => { void received.then(subscription => subscription.remove()); };
 }
