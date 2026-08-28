@@ -63,7 +63,6 @@ export async function registerForSecurityPushNotifications(
 ): Promise<boolean> {
   if (isExpoGo) return false;
   const Notifications = getNotifications();
-  const Notifications = getNotifications();
   const permission = await Notifications.getPermissionsAsync();
   let status = permission.status;
 
