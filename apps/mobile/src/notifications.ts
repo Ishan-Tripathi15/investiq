@@ -1,22 +1,19 @@
-import * as Notifications from 'expo-notifications';
-import Constants, { ExecutionEnvironment } from 'expo-constants';
+import type * as NotificationsTypes from 'expo-notifications';
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { getAccessToken, getOrCreateDeviceId } from './auth';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000/api/v1';
 const MAX_REGISTRATION_ATTEMPTS = 3;
 const RETRY_DELAYS_MS = [250, 750, 1500];
+const isExpoGo = Constants.executionEnvironment === 'storeClient';
 
-if (Constants.executionEnvironment !== ExecutionEnvironment.StoreClient) {
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowBanner: true,
-      shouldShowList: true,
-      shouldPlaySound: true,
-      shouldSetBadge: true,
-    }),
-  });
+function getNotifications(): typeof import('expo-notifications') {
+  return require('expo-notifications');
 }
+
+
+
 
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -64,7 +61,9 @@ async function registerDevice(accessToken: string, deviceId: string, pushToken: 
 export async function registerForSecurityPushNotifications(
   options: { requestPermission?: boolean } = {},
 ): Promise<boolean> {
-  if (Constants.executionEnvironment === ExecutionEnvironment.StoreClient) return false;
+  if (isExpoGo) return false;
+  const Notifications = getNotifications();
+  const Notifications = getNotifications();
   const permission = await Notifications.getPermissionsAsync();
   let status = permission.status;
 
@@ -90,8 +89,10 @@ export async function registerForSecurityPushNotifications(
 }
 
 export function subscribeToSecurityNotifications(
-  onNotification: (notification: Notifications.Notification) => void,
+  onNotification: (notification: NotificationsTypes.Notification) => void,
 ) {
+  if (isExpoGo) return () => {};
+  const Notifications = getNotifications();
   const received = Notifications.addNotificationReceivedListener(onNotification);
   return () => received.remove();
 }
