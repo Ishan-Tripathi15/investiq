@@ -2,6 +2,8 @@ services:
   - type: web
     name: investiq-api
     runtime: docker
+    plan: free
+    region: singapore
     dockerfilePath: ./apps/api/Dockerfile
     dockerContext: .
     healthCheckPath: /api/v1/health
@@ -10,16 +12,27 @@ services:
         value: production
       - key: PORT
         value: 3000
+
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: investiq-db
+          property: connectionString
+
       - key: REDIS_URL
-        sync: false
+        fromService:
+          name: investiq-redis
+          type: keyvalue
+          property: connectionString
+
       - key: AUTH_JWT_SECRET
-        sync: false
+        generateValue: true
+
       - key: DATA_ENCRYPTION_KEY
-        sync: false
+        generateValue: true
+
       - key: TWELVE_DATA_API_KEY
         sync: false
+
       - key: AUTH_JWT_ISSUER
         value: investiq-api
       - key: AUTH_JWT_AUDIENCE
@@ -34,3 +47,19 @@ services:
         value: 8000
       - key: MARKET_DATA_CACHE_TTL_SECONDS
         value: 300
+
+  - type: keyvalue
+    name: investiq-redis
+    plan: free
+    region: singapore
+    ipAllowList:
+      - source: 0.0.0.0/0
+        description: Allow connections
+
+databases:
+  - name: investiq-db
+    databaseName: investiq
+    user: investiq
+    plan: free
+    region: singapore
+    postgresMajorVersion: "18"
