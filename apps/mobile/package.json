@@ -13,7 +13,7 @@
     "test": "jest --passWithNoTests"
   },
   "dependencies": {
-    "@expo/metro-runtime": "^6.1.2",
+    "@expo/metro-runtime": "~57.0.14",
     "@investiq/domain": "workspace:*",
     "expo": "^57.0.0",
     "expo-constants": "~18.0.0",
@@ -23,7 +23,7 @@
     "expo-router": "~57.0.16",
     "expo-secure-store": "~15.0.0",
     "expo-status-bar": "~3.0.0",
-    "react": "19.2.3",
+    "react": "19.2.8",
     "react-native": "0.86.0",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.26.0",
