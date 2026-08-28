@@ -8,8 +8,8 @@ const MAX_REGISTRATION_ATTEMPTS = 3;
 const RETRY_DELAYS_MS = [250, 750, 1500];
 const isExpoGo = Constants.executionEnvironment === 'storeClient';
 
-function getNotifications(): typeof import('expo-notifications') {
-  return require('expo-notifications');
+async function getNotifications(): Promise<typeof import('expo-notifications')> {
+  return import('expo-notifications');
 }
 
 
@@ -62,7 +62,7 @@ export async function registerForSecurityPushNotifications(
   options: { requestPermission?: boolean } = {},
 ): Promise<boolean> {
   if (isExpoGo) return false;
-  const Notifications = getNotifications();
+  const Notifications = await getNotifications();
   const permission = await Notifications.getPermissionsAsync();
   let status = permission.status;
 
