@@ -1,5 +1,5 @@
 import * as Notifications from 'expo-notifications';
-import Constants from 'expo-constants';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { Platform } from 'react-native';
 import { getAccessToken, getOrCreateDeviceId } from './auth';
 
@@ -7,14 +7,16 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000/api/v1
 const MAX_REGISTRATION_ATTEMPTS = 3;
 const RETRY_DELAYS_MS = [250, 750, 1500];
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
+if (Constants.executionEnvironment !== ExecutionEnvironment.StoreClient) {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+    }),
+  });
+}
 
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -62,6 +64,7 @@ async function registerDevice(accessToken: string, deviceId: string, pushToken: 
 export async function registerForSecurityPushNotifications(
   options: { requestPermission?: boolean } = {},
 ): Promise<boolean> {
+  if (Constants.executionEnvironment === ExecutionEnvironment.StoreClient) return false;
   const permission = await Notifications.getPermissionsAsync();
   let status = permission.status;
 
